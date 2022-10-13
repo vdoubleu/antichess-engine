@@ -19,4 +19,10 @@ impl Pos {
         notation.push(((7 - self.row) as u8 + 49) as char);
         notation
     }
+
+    pub fn from_algebraic_notation(s: String) -> Pos {
+        let col = s.chars().next().unwrap() as usize - 97;
+        let row = 7 - (s.chars().nth(1).unwrap() as usize - 49);
+        Pos::new(row, col)
+    }
 }

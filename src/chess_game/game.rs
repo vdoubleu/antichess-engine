@@ -1,5 +1,5 @@
 use crate::chess_game::valid_move_finder::*;
-use crate::chess_game::{Color, Game, ChessMove, Piece, PieceType, Pos, Square};
+use crate::chess_game::{ChessMove, Color, Game, Piece, PieceType, Pos, Square};
 use std::fmt;
 
 impl Game {
@@ -19,8 +19,8 @@ impl Game {
         }
     }
 
-    pub fn add_piece(&mut self, piece: PieceType, color: Color, pos: Pos) -> &mut Self {
-        self.squares[pos.row][pos.col].piece = Some(Piece::new(piece, color));
+    pub fn add_piece(&mut self, piece: PieceType, color: Color, pos: &Pos) -> &mut Self {
+        self.square_at_pos(pos).piece = Some(Piece::new(piece, color));
 
         self
     }
@@ -28,7 +28,7 @@ impl Game {
     pub fn empty_board(&mut self) -> &mut Self {
         for r in 0..8 {
             for c in 0..8 {
-                self.squares[r][c].piece = None;
+                self.square_at(r, c).piece = None;
             }
         }
 
@@ -48,7 +48,7 @@ impl Game {
         for r in 0..8 {
             let mut empty_count = 0;
             for c in 0..8 {
-                if let Some(piece) = &self.squares[r][c].piece {
+                if let Some(piece) = &self.piece_at(r, c) {
                     if empty_count > 0 {
                         fen_string += empty_count.to_string().as_str();
                         empty_count = 0;
@@ -83,7 +83,7 @@ impl Game {
                 col += c.to_digit(10).unwrap() as usize;
             } else {
                 let piece = Piece::from_char(c);
-                self.squares[row][col].piece = Some(piece);
+                self.square_at(row, col).piece = Some(piece);
                 col += 1;
             }
         }
@@ -96,7 +96,7 @@ impl Game {
             return false;
         }
 
-        self.squares[pos.row][pos.col].piece.is_none()
+        self.piece_at_pos(pos).is_none()
     }
 
     pub fn has_piece_with_color(&self, pos: &Pos, color: Color) -> bool {
@@ -104,14 +104,14 @@ impl Game {
             return false;
         }
 
-        match &self.squares[pos.row][pos.col].piece {
+        match &self.piece_at_pos(pos) {
             Some(piece) => piece.color == color,
             None => false,
         }
     }
 
     pub fn valid_moves_for_piece(&self, pos: &Pos) -> Vec<Pos> {
-        if let Some(piece) = &self.squares[pos.row][pos.col].piece {
+        if let Some(piece) = &self.piece_at_pos(pos) {
             match piece.piece_type {
                 PieceType::Pawn => all_valid_moves_for_pawn(self, pos),
                 PieceType::Knight => all_valid_moves_for_knight(self, pos),
@@ -135,7 +135,7 @@ impl Game {
                     let valid_moves = self.valid_moves_for_piece(&cur_pos);
                     for valid_move in valid_moves {
                         all_valid_moves.push(ChessMove::new(
-                            self.squares[r][c].piece.unwrap(),
+                            self.piece_at(r, c).unwrap(),
                             cur_pos,
                             valid_move,
                         ));
@@ -158,7 +158,7 @@ impl Game {
                     for valid_move in valid_moves {
                         if self.has_piece_with_color(&valid_move, color.opposite()) {
                             all_valid_moves.push(ChessMove::new(
-                                self.squares[r][c].piece.unwrap(),
+                                self.piece_at(r, c).unwrap(),
                                 cur_pos,
                                 valid_move,
                             ));
@@ -198,9 +198,9 @@ impl Game {
         // check move is valid
         if self.move_is_valid(from, to) {
             // move piece
-            self.squares[to.row][to.col].piece = self.squares[from.row][from.col].piece.take();
+            self.squares[to.row][to.col].piece = self.piece_at_pos(from).take();
 
-            self.squares[to.row][to.col].piece.unwrap().has_moved = true;
+            self.piece_at_pos(to).unwrap().has_moved = true;
 
             // change player turn
             self.player_turn = match self.player_turn {
@@ -209,17 +209,32 @@ impl Game {
             };
 
             // check for promotion
-            let p = self.squares[to.row][to.col].piece.unwrap();
-            if p.piece_type == PieceType::Pawn {
-                if (p.color == Color::White && to.row == 0)
-                    || (p.color == Color::Black && to.row == 7)
-                {
-                    self.squares[to.row][to.col].piece = promotion;
-                }
+            let p = self.piece_at_pos(to).unwrap();
+            if p.piece_type == PieceType::Pawn
+                && ((p.color == Color::White && to.row == 0)
+                    || (p.color == Color::Black && to.row == 7))
+            {
+                self.square_at_pos(to).piece = promotion;
             }
         }
 
         self
+    }
+
+    pub fn piece_at(&self, r: usize, c: usize) -> Option<Piece> {
+        self.squares[r][c].piece
+    }
+
+    pub fn piece_at_pos(&self, pos: &Pos) -> Option<Piece> {
+        self.squares[pos.row][pos.col].piece
+    }
+
+    pub fn square_at(&self, r: usize, c: usize) -> Square {
+        self.squares[r][c]
+    }
+
+    pub fn square_at_pos(&self, pos: &Pos) -> Square {
+        self.squares[pos.row][pos.col]
     }
 }
 

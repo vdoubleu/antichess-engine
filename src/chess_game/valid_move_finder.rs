@@ -12,7 +12,7 @@ pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
     let row = pos.row;
     let col = pos.col;
 
-    let piece = match game.squares[row][col].piece {
+    let piece = match game.piece_at(row, col) {
         Some(p) => p,
         None => return valid_moves,
     };
@@ -93,7 +93,7 @@ pub fn all_valid_moves_for_knight(game: &Game, pos: &Pos) -> Vec<Pos> {
     let row = pos.row;
     let col = pos.col;
 
-    let piece = match game.squares[row][col].piece {
+    let piece = match game.piece_at(row, col) {
         Some(p) => p,
         None => return valid_moves,
     };
@@ -139,7 +139,7 @@ pub fn all_valid_moves_for_rook(game: &Game, pos: &Pos, no_piece_check: bool) ->
     let row = pos.row;
     let col = pos.col;
 
-    let piece = match game.squares[row][col].piece {
+    let piece = match game.piece_at(row, col) {
         Some(p) => p,
         None => return valid_moves,
     };
@@ -188,7 +188,7 @@ pub fn all_valid_moves_for_bishop(game: &Game, pos: &Pos, no_piece_check: bool) 
     let row = pos.row;
     let col = pos.col;
 
-    let piece = match game.squares[row][col].piece {
+    let piece = match game.piece_at(row, col) {
         Some(p) => p,
         None => return valid_moves,
     };
@@ -235,7 +235,7 @@ pub fn all_valid_moves_for_queen(game: &Game, pos: &Pos) -> Vec<Pos> {
     let row = pos.row;
     let col = pos.col;
 
-    let piece = match game.squares[row][col].piece {
+    let piece = match game.piece_at(row, col) {
         Some(p) => p,
         None => return valid_moves,
     };
@@ -259,7 +259,7 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
     let row = pos.row;
     let col = pos.col;
 
-    let piece = match game.squares[row][col].piece {
+    let piece = match game.piece_at(row, col) {
         Some(p) => p,
         None => return valid_moves,
     };
@@ -301,7 +301,7 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
     }
 
     // castling
-    // check if king has moved 
+    // check if king has moved
     if piece.has_moved {
         return valid_moves;
     }
@@ -319,7 +319,7 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
     };
 
     for pos in rook_pos {
-        let piece = match game.squares[pos.row][pos.col].piece {
+        let piece = match game.piece_at_pos(&pos) {
             Some(p) => p,
             None => continue,
         };
@@ -329,7 +329,7 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
         }
 
         // check if there are any pieces between the king and the rook
-        let (king_row, king_col) = match color {
+        let (_king_row, king_col) = match color {
             Color::White => (0, 4),
             Color::Black => (7, 4),
         };
@@ -357,7 +357,6 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
         // if we get here, then the king can castle
         valid_moves.push(Pos::new(rook_row, end));
     }
-
 
     valid_moves
 }

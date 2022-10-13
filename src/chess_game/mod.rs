@@ -1,9 +1,9 @@
+mod chess_move;
 mod color;
 mod game;
 mod piece;
 mod pos;
 mod square;
-mod chess_move;
 mod valid_move_finder;
 
 #[derive(Clone)]
