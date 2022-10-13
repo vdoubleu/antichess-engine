@@ -300,5 +300,64 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
         }
     }
 
+    // castling
+    // check if king has moved 
+    if piece.has_moved {
+        return valid_moves;
+    }
+
+    // TODO: implement this
+    // check if king is in check
+    // if game.is_in_check(color) {
+    //     return valid_moves;
+    // }
+
+    // check if rooks have moved
+    let rook_pos = match color {
+        Color::White => vec![Pos::new(0, 0), Pos::new(0, 7)],
+        Color::Black => vec![Pos::new(7, 0), Pos::new(7, 7)],
+    };
+
+    for pos in rook_pos {
+        let piece = match game.squares[pos.row][pos.col].piece {
+            Some(p) => p,
+            None => continue,
+        };
+
+        if piece.has_moved {
+            continue;
+        }
+
+        // check if there are any pieces between the king and the rook
+        let (king_row, king_col) = match color {
+            Color::White => (0, 4),
+            Color::Black => (7, 4),
+        };
+
+        let (rook_row, rook_col) = (pos.row, pos.col);
+
+        let (start, end) = if rook_col < king_col {
+            (rook_col + 1, king_col)
+        } else {
+            (king_col + 1, rook_col)
+        };
+
+        let mut has_pieces_between = false;
+        for i in start..end {
+            if !game.is_empty_square(&Pos::new(rook_row, i)) {
+                has_pieces_between = true;
+                break;
+            }
+        }
+
+        if has_pieces_between {
+            continue;
+        }
+
+        // if we get here, then the king can castle
+        valid_moves.push(Pos::new(rook_row, end));
+    }
+
+
     valid_moves
 }
