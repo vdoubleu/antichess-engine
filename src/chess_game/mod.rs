@@ -3,6 +3,7 @@ mod game;
 mod piece;
 mod pos;
 mod square;
+mod chess_move;
 mod valid_move_finder;
 
 #[derive(Clone)]
@@ -47,8 +48,9 @@ pub enum PieceType {
 }
 
 #[derive(Debug)]
-pub struct Move {
+pub struct ChessMove {
     piece: Piece,
     start_pos: Pos,
     end_pos: Pos,
+    promotion: Option<Piece>,
 }

@@ -1,5 +1,5 @@
 use crate::chess_game::valid_move_finder::*;
-use crate::chess_game::{Color, Game, Move, Piece, PieceType, Pos, Square};
+use crate::chess_game::{Color, Game, ChessMove, Piece, PieceType, Pos, Square};
 use std::fmt;
 
 impl Game {
@@ -125,8 +125,8 @@ impl Game {
         }
     }
 
-    pub fn all_valid_moves_for_color(&self, color: Color) -> Vec<Move> {
-        let mut all_valid_moves: Vec<Move> = Vec::new();
+    pub fn all_valid_moves_for_color(&self, color: Color) -> Vec<ChessMove> {
+        let mut all_valid_moves: Vec<ChessMove> = Vec::new();
 
         for r in 0..8 {
             for c in 0..8 {
@@ -134,11 +134,11 @@ impl Game {
                 if self.has_piece_with_color(&cur_pos, color) {
                     let valid_moves = self.valid_moves_for_piece(&cur_pos);
                     for valid_move in valid_moves {
-                        all_valid_moves.push(Move {
-                            piece: self.squares[r][c].piece.unwrap(),
-                            start_pos: cur_pos,
-                            end_pos: valid_move,
-                        });
+                        all_valid_moves.push(ChessMove::new(
+                            self.squares[r][c].piece.unwrap(),
+                            cur_pos,
+                            valid_move,
+                        ));
                     }
                 }
             }
@@ -147,8 +147,8 @@ impl Game {
         all_valid_moves
     }
 
-    pub fn all_valid_moves_for_color_that_take(&self, color: Color) -> Vec<Move> {
-        let mut all_valid_moves: Vec<Move> = Vec::new();
+    pub fn all_valid_moves_for_color_that_take(&self, color: Color) -> Vec<ChessMove> {
+        let mut all_valid_moves: Vec<ChessMove> = Vec::new();
 
         for r in 0..8 {
             for c in 0..8 {
@@ -157,11 +157,11 @@ impl Game {
                     let valid_moves = self.valid_moves_for_piece(&cur_pos);
                     for valid_move in valid_moves {
                         if self.has_piece_with_color(&valid_move, color.opposite()) {
-                            all_valid_moves.push(Move {
-                                piece: self.squares[r][c].piece.unwrap(),
-                                start_pos: cur_pos,
-                                end_pos: valid_move,
-                            });
+                            all_valid_moves.push(ChessMove::new(
+                                self.squares[r][c].piece.unwrap(),
+                                cur_pos,
+                                valid_move,
+                            ));
                         }
                     }
                 }
@@ -190,7 +190,7 @@ impl Game {
         valid
     }
 
-    pub fn make_move(&mut self, user_move: &Move, promo: Option<Piece>) -> &mut Self {
+    pub fn make_move(&mut self, user_move: &ChessMove, promo: Option<Piece>) -> &mut Self {
         self.move_piece(&user_move.start_pos, &user_move.end_pos, promo)
     }
 

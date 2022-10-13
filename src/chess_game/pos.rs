@@ -12,4 +12,11 @@ impl Pos {
 
         Pos { row: r, col: c }
     }
+
+    pub fn to_algebraic_notation(&self) -> String {
+        let mut notation = String::new();
+        notation.push((self.col as u8 + 97) as char);
+        notation.push(((7 - self.row) as u8 + 49) as char);
+        notation
+    }
 }

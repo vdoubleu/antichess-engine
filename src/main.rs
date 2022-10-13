@@ -23,7 +23,7 @@ fn main() {
         let mut game_copy = game.clone();
         game_copy.make_move(&m, None);
 
-        println!("{:?}", m);
+        println!("{}", m);
         println!("{}", game_copy);
     }
 }
