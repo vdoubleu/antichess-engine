@@ -1,6 +1,6 @@
-mod game;
+mod chess_game;
 
-use crate::game::{Game, Color};
+use crate::chess_game::{Color, Game};
 
 fn main() {
     let mut game = Game::new();
@@ -10,5 +10,20 @@ fn main() {
     println!("{}", game);
 
     let moves = game.all_valid_moves_for_color(Color::White);
-    println!("{:?}", moves);
+    // println!("{:?}", moves);
+
+    // only look at last 5 moves
+    //let moves = moves.iter().rev().take(5).rev().collect::<Vec<_>>();
+
+    // for some reason, when printing all possible starting moves
+    // for white at once, the shell will chop off weird bits of the last
+    // board. I've double checked that everything is good, and it
+    // works fine if you print only parts of it at a time.
+    for m in moves {
+        let mut game_copy = game.clone();
+        game_copy.make_move(&m, None);
+
+        println!("{:?}", m);
+        println!("{}", game_copy);
+    }
 }

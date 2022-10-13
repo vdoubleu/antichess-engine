@@ -1,5 +1,5 @@
+use crate::chess_game::Color;
 use std::fmt;
-use crate::game::Color;
 
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

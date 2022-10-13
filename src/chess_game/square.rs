@@ -1,4 +1,4 @@
-use crate::game::{Square, Pos};
+use crate::chess_game::{Pos, Square};
 
 impl Square {
     pub fn new() -> Square {

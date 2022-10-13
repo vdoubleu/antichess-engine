@@ -1,8 +1,9 @@
-use crate::game::{Color, Game, PieceType, Pos};
+use crate::chess_game::{Color, Game, PieceType, Pos};
 
 fn move_within_board_bounds(row: i16, col: i16) -> bool {
     // assumes board is 8x8
-    row >= 0 && row < 8 && col >= 0 && col < 8
+    let r = 0..8;
+    r.contains(&row) && r.contains(&col)
 }
 
 pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
@@ -103,7 +104,7 @@ pub fn all_valid_moves_for_knight(game: &Game, pos: &Pos) -> Vec<Pos> {
 
     let color = piece.color;
 
-    let moves: Vec<(i16, i16)> = vec!(
+    let moves: Vec<(i16, i16)> = vec![
         (1, 2),
         (2, 1),
         (2, -1),
@@ -112,7 +113,7 @@ pub fn all_valid_moves_for_knight(game: &Game, pos: &Pos) -> Vec<Pos> {
         (-2, -1),
         (-2, 1),
         (-1, 2),
-    );
+    ];
 
     for (row_offset, col_offset) in moves {
         let new_row = row as i16 + row_offset;
@@ -149,12 +150,7 @@ pub fn all_valid_moves_for_rook(game: &Game, pos: &Pos, no_piece_check: bool) ->
 
     let color = piece.color;
 
-    let rook_move_directions: Vec<(i16, i16)> = vec!(
-        (1, 0),
-        (-1, 0),
-        (0, 1),
-        (0, -1),
-    );
+    let rook_move_directions: Vec<(i16, i16)> = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
 
     for (row_dir, col_dir) in rook_move_directions {
         let mut row = row as i16;
@@ -203,12 +199,7 @@ pub fn all_valid_moves_for_bishop(game: &Game, pos: &Pos, no_piece_check: bool) 
 
     let color = piece.color;
 
-    let bishop_move_directions: Vec<(i16, i16)> = vec!(
-        (1, 1),
-        (-1, 1),
-        (1, -1),
-        (-1, -1),
-    );
+    let bishop_move_directions: Vec<(i16, i16)> = vec![(1, 1), (-1, 1), (1, -1), (-1, -1)];
 
     for (row_dir, col_dir) in bishop_move_directions {
         let mut row = row as i16;
@@ -279,7 +270,7 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
 
     let color = piece.color;
 
-    let king_move_options: Vec<(i16, i16)> = vec!(
+    let king_move_options: Vec<(i16, i16)> = vec![
         (1, 0),
         (-1, 0),
         (0, 1),
@@ -288,7 +279,7 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
         (-1, 1),
         (1, -1),
         (-1, -1),
-    );
+    ];
 
     for (row_offset, col_offset) in king_move_options {
         let new_row = row as i16 + row_offset;

@@ -1,10 +1,11 @@
-mod game;
-mod pos;
-mod piece;
-mod square;
 mod color;
+mod game;
+mod piece;
+mod pos;
+mod square;
 mod valid_move_finder;
 
+#[derive(Clone)]
 pub struct Game {
     squares: [[Square; 8]; 8],
     player_turn: Color,
@@ -29,7 +30,7 @@ pub struct Piece {
     has_moved: bool, // if the piece has been moved at least once before, useful for castle and pawn start
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
     Black,
     White,

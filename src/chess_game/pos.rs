@@ -1,4 +1,4 @@
-use crate::game::Pos;
+use crate::chess_game::Pos;
 
 impl Pos {
     pub fn default() -> Pos {

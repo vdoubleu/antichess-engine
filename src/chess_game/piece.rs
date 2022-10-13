@@ -1,10 +1,10 @@
-use crate::game::{Piece, PieceType, Color};
+use crate::chess_game::{Color, Piece, PieceType};
 
 impl Piece {
     pub fn new(piece_type: PieceType, color: Color) -> Piece {
         Piece {
-            piece_type: piece_type,
-            color: color,
+            piece_type,
+            color,
             has_moved: false,
         }
     }
