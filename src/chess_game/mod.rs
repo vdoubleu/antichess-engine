@@ -31,7 +31,7 @@ pub struct Piece {
     has_moved: bool, // if the piece has been moved at least once before, useful for castle and pawn start
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, clap::ValueEnum)]
 pub enum Color {
     Black,
     White,
@@ -47,7 +47,7 @@ pub enum PieceType {
     King,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
     piece: Piece,
     start_pos: Pos,

@@ -39,7 +39,7 @@ impl ChessMove {
         notation
     }
 
-    pub fn from_xboard_algebraic_notation(s: String, game: &Game) -> ChessMove {
+    pub fn from_xboard_algebraic_notation(s: &String, game: &Game) -> ChessMove {
         let start_pos = Pos::from_algebraic_notation(s[0..2].to_string());
         let end_pos = Pos::from_algebraic_notation(s[2..4].to_string());
         let promotion = if s.len() == 5 {
