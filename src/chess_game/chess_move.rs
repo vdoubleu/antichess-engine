@@ -49,7 +49,7 @@ impl ChessMove {
         };
 
         let p = match game.piece_at_pos(&start_pos) {
-            Some(p) => p,
+            Some(&p) => p,
             None => panic!("No piece at start position"),
         };
 

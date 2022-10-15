@@ -34,6 +34,8 @@ fn main() {
         game.make_move(&m, None);
     }
 
+    println!("{}", game);
+
     for line in stdin.lock().lines() {
         match line {
             Ok(line) => {
@@ -49,6 +51,8 @@ fn main() {
                 };
 
                 game.make_move(&m, None);
+
+                println!("{}", game);
             },
             Err(error) => println!("error: {}", error),
         }

@@ -20,7 +20,7 @@ impl Game {
     }
 
     pub fn add_piece(&mut self, piece: PieceType, color: Color, pos: &Pos) -> &mut Self {
-        self.square_at_pos(pos).piece = Some(Piece::new(piece, color));
+        self.square_at_pos_mut(pos).piece = Some(Piece::new(piece, color));
 
         self
     }
@@ -28,7 +28,7 @@ impl Game {
     pub fn empty_board(&mut self) -> &mut Self {
         for r in 0..8 {
             for c in 0..8 {
-                self.square_at(r, c).piece = None;
+                self.square_at_mut(r, c).piece = None;
             }
         }
 
@@ -83,7 +83,7 @@ impl Game {
                 col += c.to_digit(10).unwrap() as usize;
             } else {
                 let piece = Piece::from_char(c);
-                self.square_at(row, col).piece = Some(piece);
+                self.square_at_mut(row, col).piece = Some(piece);
                 col += 1;
             }
         }
@@ -135,7 +135,7 @@ impl Game {
                     let valid_moves = self.valid_moves_for_piece(&cur_pos);
                     for valid_move in valid_moves {
                         all_valid_moves.push(ChessMove::new(
-                            self.piece_at(r, c).unwrap(),
+                            *self.piece_at(r, c).unwrap(),
                             cur_pos,
                             valid_move,
                         ));
@@ -158,7 +158,7 @@ impl Game {
                     for valid_move in valid_moves {
                         if self.has_piece_with_color(&valid_move, color.opposite()) {
                             all_valid_moves.push(ChessMove::new(
-                                self.piece_at(r, c).unwrap(),
+                                *self.piece_at(r, c).unwrap(),
                                 cur_pos,
                                 valid_move,
                             ));
@@ -198,9 +198,10 @@ impl Game {
         // check move is valid
         if self.move_is_valid(from, to) {
             // move piece
-            self.squares[to.row][to.col].piece = self.piece_at_pos(from).take();
+            self.square_at_pos_mut(to).piece = self.squares[from.row][from.col].piece.take();
 
-            self.piece_at_pos(to).unwrap().has_moved = true;
+            // set has moved
+            self.piece_at_pos_mut(to).unwrap().has_moved = true;
 
             // change player turn
             self.player_turn = match self.player_turn {
@@ -214,27 +215,43 @@ impl Game {
                 && ((p.color == Color::White && to.row == 0)
                     || (p.color == Color::Black && to.row == 7))
             {
-                self.square_at_pos(to).piece = promotion;
+                self.square_at_pos_mut(to).piece = promotion;
             }
         }
 
         self
     }
 
-    pub fn piece_at(&self, r: usize, c: usize) -> Option<Piece> {
-        self.squares[r][c].piece
+    pub fn piece_at(&self, r: usize, c: usize) -> Option<&Piece> {
+        self.squares[r][c].piece.as_ref()
     }
 
-    pub fn piece_at_pos(&self, pos: &Pos) -> Option<Piece> {
-        self.squares[pos.row][pos.col].piece
+    pub fn piece_at_mut(&mut self, r: usize, c: usize) -> Option<&mut Piece> {
+        self.squares[r][c].piece.as_mut()
     }
 
-    pub fn square_at(&self, r: usize, c: usize) -> Square {
-        self.squares[r][c]
+    pub fn piece_at_pos(&self, pos: &Pos) -> Option<&Piece> {
+        self.squares[pos.row][pos.col].piece.as_ref()
     }
 
-    pub fn square_at_pos(&self, pos: &Pos) -> Square {
-        self.squares[pos.row][pos.col]
+    pub fn piece_at_pos_mut(&mut self, pos: &Pos) -> Option<&mut Piece> {
+        self.squares[pos.row][pos.col].piece.as_mut()
+    }
+
+    pub fn square_at(&self, r: usize, c: usize) -> &Square {
+        &self.squares[r][c]
+    }
+
+    pub fn square_at_mut(&mut self, r: usize, c: usize) -> &mut Square {
+        &mut self.squares[r][c]
+    }
+
+    pub fn square_at_pos(&self, pos: &Pos) -> &Square {
+        &self.squares[pos.row][pos.col]
+    }
+
+    pub fn square_at_pos_mut(&mut self, pos: &Pos) -> &mut Square {
+        &mut self.squares[pos.row][pos.col]
     }
 }
 
@@ -242,11 +259,12 @@ impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut out_string = format!("Turn: {}\n", self.player_turn);
 
-        let divider = "-----------------\n";
+        let divider = " -----------------\n";
 
         out_string += divider;
 
         for r in 0..8 {
+            out_string += (8 - r).to_string().as_str();
             out_string += "|";
             for c in 0..8 {
                 out_string += self.squares[r][c].char_notation().as_str();
@@ -255,6 +273,8 @@ impl fmt::Display for Game {
             out_string += "\n";
             out_string += divider;
         }
+
+        out_string += "  a b c d e f g h\n";
 
         write!(f, "{}", out_string)
     }
