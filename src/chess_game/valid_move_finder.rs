@@ -52,7 +52,7 @@ pub fn all_valid_moves_for_pawn(
             }
         }
 
-        if !has_moved {
+        if !has_moved && move_within_board_bounds((row as i16) + 2, col as i16) {
             let two_in_front = Pos::new(row + 2, col);
             if !only_check_currently_attacking && game.is_empty_square(&two_in_front) {
                 valid_moves.push(two_in_front);
@@ -80,7 +80,7 @@ pub fn all_valid_moves_for_pawn(
             }
         }
 
-        if !has_moved {
+        if !has_moved && move_within_board_bounds((row as i16) - 2, col as i16) {
             let two_in_front = Pos::new(row - 2, col);
             if !only_check_currently_attacking && game.is_empty_square(&two_in_front) {
                 valid_moves.push(two_in_front);

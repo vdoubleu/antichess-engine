@@ -232,8 +232,12 @@ impl Game {
         valid
     }
 
-    pub fn make_move(&mut self, user_move: &ChessMove, promo: Option<Piece>) -> &mut Self {
-        self.move_piece(&user_move.start_pos, &user_move.end_pos, promo)
+    pub fn make_move(&mut self, user_move: &ChessMove) -> &mut Self {
+        self.move_piece(
+            &user_move.start_pos,
+            &user_move.end_pos,
+            user_move.promotion,
+        )
     }
 
     pub fn move_piece(&mut self, from: &Pos, to: &Pos, promotion: Option<Piece>) -> &mut Self {
@@ -245,19 +249,23 @@ impl Game {
             // set has moved
             self.piece_at_pos_mut(to).unwrap().has_moved = true;
 
-            // change player turn
-            self.player_turn = match self.player_turn {
-                Color::White => Color::Black,
-                Color::Black => Color::White,
-            };
-
             // check for promotion
             let p = self.piece_at_pos(to).unwrap();
             if p.piece_type == PieceType::Pawn
                 && ((p.color == Color::White && to.row == 0)
                     || (p.color == Color::Black && to.row == 7))
             {
-                self.square_at_pos_mut(to).piece = promotion;
+                if let Some(promotion_piece) = promotion {
+                    let new_promo = Piece {
+                        piece_type: promotion_piece.piece_type,
+                        color: p.color,
+                        has_moved: true,
+                    };
+
+                    self.square_at_pos_mut(to).piece = Some(new_promo);
+                } else {
+                    panic!("no promotion piece provided");
+                }
             }
 
             // check for castling
@@ -269,6 +277,12 @@ impl Game {
                     self.relocate_piece(&Pos::new(to.row, 0), &Pos::new(to.row, 3));
                 }
             }
+
+            // change player turn
+            self.player_turn = match self.player_turn {
+                Color::White => Color::Black,
+                Color::Black => Color::White,
+            };
         } else {
             panic!("invalid move");
         }

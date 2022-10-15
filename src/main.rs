@@ -31,7 +31,7 @@ fn main() {
                 return;
             }
         };
-        game.make_move(&m, None);
+        game.make_move(&m);
     }
 
     println!("{}", game);
@@ -40,7 +40,7 @@ fn main() {
         match line {
             Ok(line) => {
                 let opponent_move = ChessMove::from_xboard_algebraic_notation(&line, &game);
-                game.make_move(&opponent_move, None);
+                game.make_move(&opponent_move);
 
                 let m = match generate_move(&game, Color::White) {
                     Some(m) => m,
@@ -50,7 +50,7 @@ fn main() {
                     }
                 };
 
-                game.make_move(&m, None);
+                game.make_move(&m);
 
                 println!("{}", game);
             }
