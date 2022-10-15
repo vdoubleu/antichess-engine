@@ -12,7 +12,7 @@ pub struct Game {
     player_turn: Color,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Pos {
     row: usize,
     col: usize,

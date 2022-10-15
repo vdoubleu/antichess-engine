@@ -6,7 +6,11 @@ fn move_within_board_bounds(row: i16, col: i16) -> bool {
     r.contains(&row) && r.contains(&col)
 }
 
-pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
+pub fn all_valid_moves_for_pawn(
+    game: &Game,
+    pos: &Pos,
+    only_check_currently_attacking: bool,
+) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
 
     let row = pos.row;
@@ -26,7 +30,7 @@ pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
 
     if color == Color::Black {
         let in_front = Pos::new(row + 1, col);
-        if game.is_empty_square(&in_front) {
+        if !only_check_currently_attacking && game.is_empty_square(&in_front) {
             valid_moves.push(in_front);
         }
 
@@ -50,13 +54,13 @@ pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
 
         if !has_moved {
             let two_in_front = Pos::new(row + 2, col);
-            if game.is_empty_square(&two_in_front) {
+            if !only_check_currently_attacking && game.is_empty_square(&two_in_front) {
                 valid_moves.push(two_in_front);
             }
         }
     } else {
         let in_front = Pos::new(row - 1, col);
-        if game.is_empty_square(&in_front) {
+        if !only_check_currently_attacking && game.is_empty_square(&in_front) {
             valid_moves.push(in_front);
         }
 
@@ -78,7 +82,7 @@ pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
 
         if !has_moved {
             let two_in_front = Pos::new(row - 2, col);
-            if game.is_empty_square(&two_in_front) {
+            if !only_check_currently_attacking && game.is_empty_square(&two_in_front) {
                 valid_moves.push(two_in_front);
             }
         }
@@ -253,7 +257,11 @@ pub fn all_valid_moves_for_queen(game: &Game, pos: &Pos) -> Vec<Pos> {
     valid_moves
 }
 
-pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
+pub fn all_valid_moves_for_king(
+    game: &Game,
+    pos: &Pos,
+    only_check_currently_attacking: bool,
+) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
 
     let row = pos.row;
@@ -300,22 +308,20 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
         }
     }
 
+    if only_check_currently_attacking {
+        return valid_moves;
+    }
+
     // castling
     // check if king has moved
     if piece.has_moved {
         return valid_moves;
     }
 
-    // TODO: implement this
-    // check if king is in check
-    // if game.is_in_check(color) {
-    //     return valid_moves;
-    // }
-
     // check if rooks have moved
     let rook_pos = match color {
-        Color::White => vec![Pos::new(0, 0), Pos::new(0, 7)],
-        Color::Black => vec![Pos::new(7, 0), Pos::new(7, 7)],
+        Color::White => vec![Pos::new(7, 0), Pos::new(7, 7)],
+        Color::Black => vec![Pos::new(0, 0), Pos::new(0, 7)],
     };
 
     for pos in rook_pos {
@@ -330,16 +336,16 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
 
         // check if there are any pieces between the king and the rook
         let (_king_row, king_col) = match color {
-            Color::White => (0, 4),
-            Color::Black => (7, 4),
+            Color::White => (7, 4),
+            Color::Black => (0, 4),
         };
 
         let (rook_row, rook_col) = (pos.row, pos.col);
 
-        let (start, end) = if rook_col < king_col {
-            (rook_col + 1, king_col)
+        let (start, end, king_check_start, king_check_end, king_dest_col) = if rook_col < king_col {
+            (rook_col + 1, king_col, rook_col + 2, king_col, rook_col + 2) //queen side castle
         } else {
-            (king_col + 1, rook_col)
+            (king_col + 1, rook_col, king_col, rook_col - 1, rook_col - 1) // king side castle
         };
 
         let mut has_pieces_between = false;
@@ -354,8 +360,23 @@ pub fn all_valid_moves_for_king(game: &Game, pos: &Pos) -> Vec<Pos> {
             continue;
         }
 
+        // check if the squares the king will move through are attacked
+        // or if king is in check
+        let mut squares_attacked = false;
+
+        for i in king_check_start..=king_check_end {
+            if game.square_attacked_by_color(&Pos::new(rook_row, i), color.opposite()) {
+                squares_attacked = true;
+                break;
+            }
+        }
+
+        if squares_attacked {
+            continue;
+        }
+
         // if we get here, then the king can castle
-        valid_moves.push(Pos::new(rook_row, end));
+        valid_moves.push(Pos::new(rook_row, king_dest_col));
     }
 
     valid_moves

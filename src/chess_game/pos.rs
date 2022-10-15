@@ -26,3 +26,11 @@ impl Pos {
         Pos::new(row, col)
     }
 }
+
+impl PartialEq for Pos {
+    fn eq(&self, other: &Self) -> bool {
+        self.row == other.row && self.col == other.col
+    }
+}
+
+impl Eq for Pos {}
