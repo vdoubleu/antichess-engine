@@ -1,7 +1,7 @@
 mod chess_game;
 mod engine;
 
-use crate::chess_game::{Color, Game, ChessMove};
+use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::generate_move;
 
 use clap::Parser;
@@ -10,7 +10,7 @@ use std::io::{self, BufRead};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    // the color of the engine_color 
+    // the color of the engine_color
     #[clap(value_enum, default_value = "white")]
     color: Color,
 }
@@ -53,7 +53,7 @@ fn main() {
                 game.make_move(&m, None);
 
                 println!("{}", game);
-            },
+            }
             Err(error) => println!("error: {}", error),
         }
     }

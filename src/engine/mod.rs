@@ -1,4 +1,4 @@
-use crate::chess_game::{Color, Game, ChessMove};
+use crate::chess_game::{ChessMove, Color, Game};
 use rand::prelude::SliceRandom;
 
 pub fn generate_move(game: &Game, color: Color) -> Option<ChessMove> {
@@ -6,9 +6,9 @@ pub fn generate_move(game: &Game, color: Color) -> Option<ChessMove> {
     let all_valid_moves = game.all_valid_moves_for_color(color);
 
     let mut rng = rand::thread_rng();
-    
+
     match all_valid_moves.choose(&mut rng) {
-        Some(m) => return Some(*m),
-        None => return None,
+        Some(m) => Some(*m),
+        None => None,
     }
 }
