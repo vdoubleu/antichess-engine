@@ -1,6 +1,8 @@
 use crate::chess_game::{ChessMove, Game, Piece, Pos};
 
 impl ChessMove {
+    /// Creates a ChessMove
+    /// If you want to create a chess move that includes a promotion, use `ChessMove::new_promo()`
     pub fn new(piece: Piece, start_pos: Pos, end_pos: Pos) -> ChessMove {
         ChessMove {
             piece,
@@ -10,6 +12,7 @@ impl ChessMove {
         }
     }
 
+    /// Creates a new ChessMove with a promotion
     pub fn new_promo(
         piece: Piece,
         start_pos: Pos,
@@ -24,9 +27,9 @@ impl ChessMove {
         }
     }
 
-    // xboard notation is a little different from standard algebraic notation
-    // it takes the first coordinate as the start position and the second as the end position
-    // so for example, e2e4 is the move e2 to e4
+    /// xboard notation is a little different from standard algebraic notation
+    /// it takes the first coordinate as the start position and the second as the end position
+    /// so for example, e2e4 is the move e2 to e4
     pub fn get_xboard_algebraic_notation(&self) -> String {
         let mut notation = String::new();
         notation += self.start_pos.get_algebraic_notation().as_str();
@@ -39,6 +42,7 @@ impl ChessMove {
         notation
     }
 
+    /// Creates a ChessMove from xboard algebraic notation
     pub fn from_xboard_algebraic_notation(s: &String, game: &Game) -> ChessMove {
         let start_pos = Pos::from_algebraic_notation(s[0..2].to_string());
         let end_pos = Pos::from_algebraic_notation(s[2..4].to_string());

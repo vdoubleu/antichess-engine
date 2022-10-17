@@ -32,6 +32,11 @@ fn main() {
             }
         };
         game.make_move(&m);
+
+        if let Some(winner) = game.game_winner() {
+            println!("Game over. Winner: {}", winner);
+            return;
+        }
     }
 
     println!("{}", game);
@@ -42,6 +47,11 @@ fn main() {
                 let opponent_move = ChessMove::from_xboard_algebraic_notation(&line, &game);
                 game.make_move(&opponent_move);
 
+                if let Some(winner) = game.game_winner() {
+                    println!("Game over. Winner: {}", winner);
+                    return;
+                }
+
                 let m = match generate_move(&game, Color::White) {
                     Some(m) => m,
                     None => {
@@ -51,6 +61,11 @@ fn main() {
                 };
 
                 game.make_move(&m);
+
+                if let Some(winner) = game.game_winner() {
+                    println!("Game over. Winner: {}", winner);
+                    return;
+                }
 
                 println!("{}", game);
             }

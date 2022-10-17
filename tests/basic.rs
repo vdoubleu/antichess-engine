@@ -18,7 +18,7 @@ fn test_make_move() {
 
     // white moves
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("e2e4"),
+        &"e2e4".to_string(),
         &game,
     ));
 
@@ -30,7 +30,7 @@ fn test_make_move() {
 
     // black moves
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("e7e5"),
+        &"e7e5".to_string(),
         &game,
     ));
 
@@ -42,7 +42,7 @@ fn test_make_move() {
 
     // white moves
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("f1c4"),
+        &"f1c4".to_string(),
         &game,
     ));
 
@@ -59,7 +59,7 @@ fn test_castle() {
     let mut game = Game::from_fen_notation("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R".to_string());
 
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("e1g1"),
+        &"e1g1".to_string(),
         &game,
     ));
 
@@ -70,7 +70,7 @@ fn test_castle() {
     );
 
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("e8g8"),
+        &"e8g8".to_string(),
         &game,
     ));
 
@@ -84,7 +84,7 @@ fn test_castle() {
     let mut game = Game::from_fen_notation("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R".to_string());
 
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("e1c1"),
+        &"e1c1".to_string(),
         &game,
     ));
 
@@ -95,7 +95,7 @@ fn test_castle() {
     );
 
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("e8c8"),
+        &"e8c8".to_string(),
         &game,
     ));
 
@@ -111,7 +111,7 @@ fn test_pawn_promotion() {
     let mut game = Game::from_fen_notation("8/7P/8/8/8/8/8/8".to_string());
 
     game.make_move(&ChessMove::from_xboard_algebraic_notation(
-        &String::from("h7h8q"),
+        &"h7h8q".to_string(),
         &game,
     ));
 

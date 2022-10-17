@@ -6,6 +6,9 @@ use crate::chess_game::{ChessMove, Color, Game, Piece, PieceType, Pos, Square};
 use std::fmt;
 
 impl Game {
+    /// Creates a new empty board
+    /// I would advise against using this since I'm not sure why you would want an empty board.
+    /// You are probably looking for `Game::new_starting_game()` or `Game::from_fen_notation(fen_str)`
     pub fn new() -> Game {
         let mut new_board = [[Square::new(); 8]; 8];
 
@@ -20,13 +23,16 @@ impl Game {
             player_turn: Color::White,
             squares: new_board,
             turn_counter: 0,
+            winner: None,
         }
     }
 
+    /// Creates a new game with the starting board
     pub fn new_starting_game() -> Game {
         Game::from_fen_notation(String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"))
     }
 
+    /// Creates a new game from a FEN string
     pub fn from_fen_notation(fen_str: String) -> Game {
         let mut row: usize = 0;
         let mut col: usize = 0;
@@ -49,16 +55,20 @@ impl Game {
         game
     }
 
+    /// Returns the color of the current player
     pub fn get_player_turn(&self) -> Color {
         self.player_turn
     }
 
+    /// Adds a piece at a given square. Not sure why exactly you would want this...
+    /// This is mostly for internal use when creating a new game
     pub fn add_piece(&mut self, piece: PieceType, color: Color, pos: &Pos) -> &mut Self {
         self.square_at_pos_mut(pos).piece = Some(Piece::new(piece, color));
 
         self
     }
 
+    /// Empties the board
     pub fn empty_board(&mut self) -> &mut Self {
         for r in 0..8 {
             for c in 0..8 {
@@ -69,6 +79,7 @@ impl Game {
         self
     }
 
+    /// Empties the board and resets the board to the starting position
     pub fn set_starting_pos(&mut self) -> &mut Self {
         self.empty_board()
             .set_with_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".to_string());
@@ -76,6 +87,7 @@ impl Game {
         self
     }
 
+    /// Gets the fen notation for the current board state
     pub fn get_fen_notation(&self) -> String {
         let mut fen_string = String::new();
 
@@ -103,6 +115,7 @@ impl Game {
         fen_string
     }
 
+    /// Resets the board to the given fen notation
     pub fn set_with_fen_notation(&mut self, fen_str: String) -> &mut Self {
         let mut row: usize = 0;
         let mut col: usize = 0;
@@ -125,6 +138,7 @@ impl Game {
         self
     }
 
+    /// Checks if the given position on the board is empty
     pub fn is_empty_square(&self, pos: &Pos) -> bool {
         if pos.row > 7 || pos.col > 7 {
             return false;
@@ -133,6 +147,7 @@ impl Game {
         self.piece_at_pos(pos).is_none()
     }
 
+    /// Checks if the given position on the board has a piece of the given color
     pub fn has_piece_with_color(&self, pos: &Pos, color: Color) -> bool {
         if pos.row > 7 || pos.col > 7 {
             return false;
@@ -144,7 +159,15 @@ impl Game {
         }
     }
 
+    /// Returns all the valid moves for the piece at the given position
     pub fn valid_moves_for_piece(
+        &self,
+        pos: &Pos,
+    ) -> Vec<Pos> {
+        self.valid_moves_for_piece_impl(pos, false)
+    }
+
+    fn valid_moves_for_piece_impl(
         &self,
         pos: &Pos,
         only_check_currently_attacking: bool,
@@ -163,7 +186,21 @@ impl Game {
         }
     }
 
+    /// Returns a vector of all the valid moves for the color
     pub fn all_valid_moves_for_color(
+        &self,
+        color: Color,
+    ) -> Vec<ChessMove> {
+        self.all_valid_moves_for_color_impl(color, false)
+    }
+    
+    /// WARNING!! This is an implementation function, you probably don't want to use this.
+    /// The function you probably want to use is `all_valid_moves_for_color`.
+    /// 
+    /// Returns all the valid moves for a color
+    /// Generally set only_check_currently_attacking to false. We only set it to 
+    /// true when we don't want to include castling (since it causes weird infinite recursions)
+    fn all_valid_moves_for_color_impl(
         &self,
         color: Color,
         only_check_currently_attacking: bool,
@@ -175,7 +212,7 @@ impl Game {
                 let cur_pos = Pos::new(r, c);
                 if self.has_piece_with_color(&cur_pos, color) {
                     let valid_moves =
-                        self.valid_moves_for_piece(&cur_pos, only_check_currently_attacking);
+                        self.valid_moves_for_piece_impl(&cur_pos, only_check_currently_attacking);
                     for valid_move in valid_moves {
                         all_valid_moves.push(ChessMove::new(
                             *self.piece_at(r, c).unwrap(),
@@ -190,6 +227,7 @@ impl Game {
         all_valid_moves
     }
 
+    /// Returns all the valid moves that a color can make that take pieces.
     pub fn all_valid_moves_for_color_that_take(&self, color: Color) -> Vec<ChessMove> {
         let mut all_valid_moves: Vec<ChessMove> = Vec::new();
 
@@ -197,7 +235,7 @@ impl Game {
             for c in 0..8 {
                 let cur_pos = Pos::new(r, c);
                 if self.has_piece_with_color(&cur_pos, color) {
-                    let valid_moves = self.valid_moves_for_piece(&cur_pos, true);
+                    let valid_moves = self.valid_moves_for_piece_impl(&cur_pos, true);
                     for valid_move in valid_moves {
                         if self.has_piece_with_color(&valid_move, color.opposite()) {
                             all_valid_moves.push(ChessMove::new(
@@ -214,12 +252,19 @@ impl Game {
         all_valid_moves
     }
 
+    /// If a winner exists, returns the winner. Otherwise returns None.
+    /// If it returns None, then the game is not over.
+    pub fn game_winner(&self) -> Option<Color> {
+        self.winner
+    }
+
+    /// Checks if a move from one position to another is valid
     pub fn move_is_valid(&self, from: &Pos, to: &Pos) -> bool {
         let mut valid = false;
 
         if let Some(piece) = &self.squares[from.row][from.col].piece {
             if piece.color == self.player_turn {
-                let valid_moves = self.valid_moves_for_piece(from, false);
+                let valid_moves = self.valid_moves_for_piece_impl(from, false);
                 for m in valid_moves {
                     if m == *to {
                         valid = true;
@@ -232,6 +277,7 @@ impl Game {
         valid
     }
 
+    /// Makes the ChessMove
     pub fn make_move(&mut self, user_move: &ChessMove) -> &mut Self {
         self.move_piece(
             &user_move.start_pos,
@@ -240,9 +286,18 @@ impl Game {
         )
     }
 
+    /// Moves a piece, would recommend against using this directly, use make_move instead
+    /// since it is a little bit easier to work with.
     pub fn move_piece(&mut self, from: &Pos, to: &Pos, promotion: Option<Piece>) -> &mut Self {
         // check move is valid
         if self.move_is_valid(from, to) {
+            // Checks if the player has taken a king and has thus won the game
+            if let Some(to_piece) = self.piece_at_pos(to) {
+                if to_piece.piece_type == PieceType::King {
+                    self.winner = Some(self.player_turn);
+                }
+            }
+
             // check for en passant
             // we have to check this before we move the piece
             // because we need to know if the position we are moving to is empty
@@ -313,15 +368,15 @@ impl Game {
         self
     }
 
-    // like move_piece but doesn't check if move is valid or any other fancy stuff
+    /// Similar to move_piece but doesn't check if move is valid or any other fancy stuff
     fn relocate_piece(&mut self, from: &Pos, to: &Pos) -> &mut Self {
         self.square_at_pos_mut(to).piece = self.squares[from.row][from.col].piece.take();
         self
     }
 
-    // checkes if pos is being attacked by color
+    // Checks if pos is being attacked by color
     pub fn square_attacked_by_color(&self, pos: &Pos, color: Color) -> bool {
-        let valid_move_for_color = self.all_valid_moves_for_color(color, true);
+        let valid_move_for_color = self.all_valid_moves_for_color_impl(color, true);
 
         for m in valid_move_for_color {
             if m.end_pos == *pos {

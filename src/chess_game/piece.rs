@@ -1,6 +1,7 @@
 use crate::chess_game::{Color, Piece, PieceType};
 
 impl Piece {
+    /// Creates a new Piece with a given color
     pub fn new(piece_type: PieceType, color: Color) -> Piece {
         Piece {
             piece_type,
@@ -10,6 +11,8 @@ impl Piece {
         }
     }
 
+    /// Takes a character, and returns t he corresponding piece 
+    /// It will take into account the case of the letter to determine the color
     pub fn from_char(c: char) -> Piece {
         let piece_type = match c {
             'P' | 'p' => PieceType::Pawn,
@@ -29,6 +32,8 @@ impl Piece {
         Piece::new(piece_type, color)
     }
 
+    /// Takes a piece, and returns the corresponding character
+    /// Black pieces are lowercase, and white pieces are uppercase (following standard chess notation)
     pub fn char_notation(&self) -> String {
         match self.color {
             Color::Black => self.piece_type.char_notation().to_lowercase(),
@@ -36,6 +41,7 @@ impl Piece {
         }
     }
 
+    /// Returns true if the piece has moved at least once before during this game
     pub fn has_moved(&self) -> bool {
         self.last_moved != -1
     }

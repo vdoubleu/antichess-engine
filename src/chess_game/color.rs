@@ -8,6 +8,7 @@ impl fmt::Display for Color {
 }
 
 impl Color {
+    /// Returns the opposite color
     pub fn opposite(&self) -> Color {
         match self {
             Color::White => Color::Black,

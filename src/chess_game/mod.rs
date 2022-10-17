@@ -11,6 +11,7 @@ pub struct Game {
     squares: [[Square; 8]; 8],
     player_turn: Color,
     turn_counter: i64,
+    winner: Option<Color>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -29,7 +30,8 @@ pub struct Square {
 pub struct Piece {
     piece_type: PieceType,
     color: Color,
-    last_moved: i64, // when the piece last moved, it's -1 if it hasn't moved yet
+    /// when the piece last moved, it's -1 if it hasn't moved yet
+    last_moved: i64,
     last_moved_from: Option<Pos>,
 }
 
