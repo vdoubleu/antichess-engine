@@ -10,6 +10,7 @@ mod valid_move_finder;
 pub struct Game {
     squares: [[Square; 8]; 8],
     player_turn: Color,
+    turn_counter: i64,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -28,7 +29,8 @@ pub struct Square {
 pub struct Piece {
     piece_type: PieceType,
     color: Color,
-    has_moved: bool, // if the piece has been moved at least once before, useful for castle and pawn start
+    last_moved: i64, // when the piece last moved, it's -1 if it hasn't moved yet
+    last_moved_from: Option<Pos>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, clap::ValueEnum)]

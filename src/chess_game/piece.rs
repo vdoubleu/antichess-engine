@@ -5,7 +5,8 @@ impl Piece {
         Piece {
             piece_type,
             color,
-            has_moved: false,
+            last_moved: -1,
+            last_moved_from: None,
         }
     }
 
@@ -33,6 +34,10 @@ impl Piece {
             Color::Black => self.piece_type.char_notation().to_lowercase(),
             Color::White => self.piece_type.char_notation(),
         }
+    }
+
+    pub fn has_moved(&self) -> bool {
+        self.last_moved != -1
     }
 }
 

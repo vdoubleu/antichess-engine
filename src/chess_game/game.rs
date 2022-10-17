@@ -1,4 +1,7 @@
-use crate::chess_game::valid_move_finder::*;
+use crate::chess_game::valid_move_finder::{
+    all_bishop_moves, all_king_moves, all_knight_moves, all_pawn_moves, all_queen_moves,
+    all_rook_moves,
+};
 use crate::chess_game::{ChessMove, Color, Game, Piece, PieceType, Pos, Square};
 use std::fmt;
 
@@ -16,6 +19,7 @@ impl Game {
         Game {
             player_turn: Color::White,
             squares: new_board,
+            turn_counter: 0,
         }
     }
 
@@ -147,16 +151,12 @@ impl Game {
     ) -> Vec<Pos> {
         if let Some(piece) = &self.piece_at_pos(pos) {
             match piece.piece_type {
-                PieceType::Pawn => {
-                    all_valid_moves_for_pawn(self, pos, only_check_currently_attacking)
-                }
-                PieceType::Knight => all_valid_moves_for_knight(self, pos),
-                PieceType::Bishop => all_valid_moves_for_bishop(self, pos, false),
-                PieceType::Rook => all_valid_moves_for_rook(self, pos, false),
-                PieceType::Queen => all_valid_moves_for_queen(self, pos),
-                PieceType::King => {
-                    all_valid_moves_for_king(self, pos, only_check_currently_attacking)
-                }
+                PieceType::Pawn => all_pawn_moves(self, pos),
+                PieceType::Knight => all_knight_moves(self, pos),
+                PieceType::Bishop => all_bishop_moves(self, pos, false),
+                PieceType::Rook => all_rook_moves(self, pos, false),
+                PieceType::Queen => all_queen_moves(self, pos),
+                PieceType::King => all_king_moves(self, pos, only_check_currently_attacking),
             }
         } else {
             panic!("no piece at pos");
@@ -243,11 +243,25 @@ impl Game {
     pub fn move_piece(&mut self, from: &Pos, to: &Pos, promotion: Option<Piece>) -> &mut Self {
         // check move is valid
         if self.move_is_valid(from, to) {
+            // check for en passant
+            // we have to check this before we move the piece
+            // because we need to know if the position we are moving to is empty
+            let en_passant_p = self.piece_at_pos(from).unwrap();
+            if en_passant_p.piece_type == PieceType::Pawn {
+                // if move to another col and no piece there, must be en passant
+                if from.col != to.col && self.piece_at_pos(to).is_none() {
+                    let target_pos_to_take = Pos::new(from.row, to.col);
+
+                    self.square_at_pos_mut(&target_pos_to_take).piece = None;
+                }
+            }
+
             // move piece
             self.square_at_pos_mut(to).piece = self.squares[from.row][from.col].piece.take();
 
-            // set has moved
-            self.piece_at_pos_mut(to).unwrap().has_moved = true;
+            // set has last moved
+            self.piece_at_pos_mut(to).unwrap().last_moved = self.turn_counter;
+            self.piece_at_pos_mut(to).unwrap().last_moved_from = Some(*from);
 
             // check for promotion
             let p = self.piece_at_pos(to).unwrap();
@@ -259,7 +273,8 @@ impl Game {
                     let new_promo = Piece {
                         piece_type: promotion_piece.piece_type,
                         color: p.color,
-                        has_moved: true,
+                        last_moved: self.turn_counter,
+                        last_moved_from: Some(*from),
                     };
 
                     self.square_at_pos_mut(to).piece = Some(new_promo);
@@ -271,11 +286,17 @@ impl Game {
             // check for castling
             let p = self.piece_at_pos(to).unwrap();
             if p.piece_type == PieceType::King {
-                if from.col == 4 && to.col == 6 {
-                    self.relocate_piece(&Pos::new(to.row, 7), &Pos::new(to.row, 5));
+                let (rook_to_pos, rook_from_pos) = if from.col == 4 && to.col == 6 {
+                    (Pos::new(to.row, 5), Pos::new(to.row, 7))
                 } else if from.col == 4 && to.col == 2 {
-                    self.relocate_piece(&Pos::new(to.row, 0), &Pos::new(to.row, 3));
-                }
+                    (Pos::new(to.row, 3), Pos::new(to.row, 0))
+                } else {
+                    panic!("invalid king or rook move when castling");
+                };
+
+                self.relocate_piece(&rook_from_pos, &rook_to_pos);
+                self.piece_at_pos_mut(&rook_to_pos).unwrap().last_moved = self.turn_counter;
+                self.piece_at_pos_mut(&rook_to_pos).unwrap().last_moved_from = Some(rook_from_pos);
             }
 
             // change player turn
@@ -283,6 +304,8 @@ impl Game {
                 Color::White => Color::Black,
                 Color::Black => Color::White,
             };
+
+            self.turn_counter += 1;
         } else {
             panic!("invalid move");
         }

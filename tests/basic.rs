@@ -1,4 +1,3 @@
-//extern crate chess_game;
 use antichess_engine::chess_game::{ChessMove, Color, Game};
 
 #[test]
