@@ -16,19 +16,19 @@ pub struct Game {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Pos {
-    row: usize,
-    col: usize,
+    pub row: usize,
+    pub col: usize,
 }
 
 #[derive(Copy, Clone)]
 pub struct Square {
-    pos: Pos,
-    piece: Option<Piece>,
+    pub pos: Pos,
+    pub piece: Option<Piece>,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub struct Piece {
-    piece_type: PieceType,
+    pub piece_type: PieceType,
     color: Color,
     /// when the piece last moved, it's -1 if it hasn't moved yet
     last_moved: i64,
@@ -41,7 +41,7 @@ pub enum Color {
     White,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum PieceType {
     Pawn,
     Knight,
@@ -53,7 +53,7 @@ pub enum PieceType {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
-    // piece: Piece,
+    piece: Piece,
     start_pos: Pos,
     end_pos: Pos,
     promotion: Option<Piece>,

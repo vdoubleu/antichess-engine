@@ -11,7 +11,7 @@ pub fn min_max(game: &Game, color: Color) -> Option<ChessMove> {
 
     let all_valid_moves = game.all_valid_moves_for_color(color);
 
-    if all_valid_moves.len() == 0 {
+    if all_valid_moves.is_empty() {
         return None;
     }
 
@@ -38,9 +38,9 @@ fn min_max_impl(game: &Game, depth: u32) -> f64 {
     }
 
     let mut best_score: f64 = f64::NEG_INFINITY;
-    if curr_turn == Color::Black { 
+    if curr_turn == Color::Black {
         best_score = f64::INFINITY;
-    } 
+    }
 
     let all_valid_moves = game.all_valid_moves_for_color(curr_turn);
 

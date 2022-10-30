@@ -68,6 +68,42 @@ impl Game {
         self
     }
 
+    pub fn get_squares_piece_type_of_color(
+        &self,
+        piece_type: PieceType,
+        color: Color,
+    ) -> Vec<Square> {
+        let mut squares = Vec::new();
+
+        for r in self.squares.iter() {
+            for s in r.iter() {
+                if let Some(p) = s.piece {
+                    if p.piece_type == piece_type && p.color == color {
+                        squares.push(*s);
+                    }
+                }
+            }
+        }
+
+        squares
+    }
+
+    pub fn get_all_squares_of_color(&self, color: Color) -> Vec<Square> {
+        let mut squares = Vec::new();
+
+        for row in self.squares.iter() {
+            for square in row.iter() {
+                if let Some(piece) = square.piece {
+                    if piece.color == color {
+                        squares.push(*square);
+                    }
+                }
+            }
+        }
+
+        squares
+    }
+
     /// Empties the board
     pub fn empty_board(&mut self) -> &mut Self {
         for r in 0..8 {
@@ -160,10 +196,7 @@ impl Game {
     }
 
     /// Returns all the valid moves for the piece at the given position
-    pub fn valid_moves_for_piece(
-        &self,
-        pos: &Pos,
-    ) -> Vec<Pos> {
+    pub fn valid_moves_for_piece(&self, pos: &Pos) -> Vec<Pos> {
         self.valid_moves_for_piece_impl(pos, false)
     }
 
@@ -187,18 +220,15 @@ impl Game {
     }
 
     /// Returns a vector of all the valid moves for the color
-    pub fn all_valid_moves_for_color(
-        &self,
-        color: Color,
-    ) -> Vec<ChessMove> {
+    pub fn all_valid_moves_for_color(&self, color: Color) -> Vec<ChessMove> {
         self.all_valid_moves_for_color_impl(color, false)
     }
-    
+
     /// WARNING!! This is an implementation function, you probably don't want to use this.
     /// The function you probably want to use is `all_valid_moves_for_color`.
-    /// 
+    ///
     /// Returns all the valid moves for a color
-    /// Generally set only_check_currently_attacking to false. We only set it to 
+    /// Generally set only_check_currently_attacking to false. We only set it to
     /// true when we don't want to include castling (since it causes weird infinite recursions)
     fn all_valid_moves_for_color_impl(
         &self,

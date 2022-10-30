@@ -1,6 +1,5 @@
-mod min_max;
-mod move_option_node;
 mod evaluate_game;
+mod min_max;
 
 use crate::chess_game::{ChessMove, Color, Game};
 use rand::prelude::SliceRandom;
@@ -14,7 +13,7 @@ pub fn generate_move(game: &Game, color: Color) -> Option<ChessMove> {
 fn random_move(game: &Game, color: Color) -> Option<ChessMove> {
     let all_valid_moves_that_take = game.all_valid_moves_for_color_that_take(color);
 
-    if all_valid_moves_that_take.len() > 0 {
+    if !all_valid_moves_that_take.is_empty() {
         let mut rng = rand::thread_rng();
         return all_valid_moves_that_take.choose(&mut rng).copied();
     }
@@ -24,4 +23,3 @@ fn random_move(game: &Game, color: Color) -> Option<ChessMove> {
     let mut rng = rand::thread_rng();
     all_valid_moves.choose(&mut rng).copied()
 }
-

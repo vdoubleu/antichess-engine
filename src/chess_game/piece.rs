@@ -11,7 +11,7 @@ impl Piece {
         }
     }
 
-    /// Takes a character, and returns t he corresponding piece 
+    /// Takes a character, and returns t he corresponding piece
     /// It will take into account the case of the letter to determine the color
     pub fn from_char(c: char) -> Piece {
         let piece_type = match c {
