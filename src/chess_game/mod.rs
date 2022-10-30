@@ -53,7 +53,7 @@ pub enum PieceType {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
-    piece: Piece,
+    // piece: Piece,
     start_pos: Pos,
     end_pos: Pos,
     promotion: Option<Piece>,
