@@ -68,6 +68,12 @@ impl Game {
         self
     }
 
+    pub fn remove_piece(&mut self, pos: &Pos) -> &mut Self {
+        self.square_at_pos_mut(pos).piece = None;
+
+        self
+    }
+
     pub fn get_all_pieces(&self) -> Vec<(Piece, Pos)> {
         let mut pieces = Vec::new();
 
@@ -345,6 +351,44 @@ impl Game {
             &user_move.end_pos,
             user_move.promotion,
         )
+    }
+
+    pub fn unmake_move(&mut self, user_move: &ChessMove) -> &mut Self {
+        // move piece back
+        if user_move.promotion.is_some() {
+            self.remove_piece(&user_move.end_pos);
+            self.add_piece(PieceType::Pawn, user_move.piece.color, &user_move.start_pos);
+        } else {
+            self.relocate_piece(&user_move.end_pos, &user_move.start_pos);
+        }
+
+        // uncastle if necessary
+        if user_move.piece.piece_type == PieceType::King
+            && (user_move.start_pos.col as i8 - user_move.end_pos.col as i8).abs() == 2
+        {
+            if user_move.end_pos.col == 2 {
+                self.relocate_piece(
+                    &Pos::new(user_move.end_pos.row, 3),
+                    &Pos::new(user_move.end_pos.row, 0),
+                );
+            } else {
+                self.relocate_piece(
+                    &Pos::new(user_move.end_pos.row, 5),
+                    &Pos::new(user_move.end_pos.row, 7),
+                );
+            }
+        }
+
+        // untake piece
+        if let Some((captured_piece, captured_piece_pos)) = user_move.captured_piece {
+            self.add_piece(
+                captured_piece.piece_type,
+                captured_piece.color,
+                &captured_piece_pos,
+            );
+        }
+
+        self
     }
 
     /// Moves a piece, would recommend against using this directly, use make_move instead
