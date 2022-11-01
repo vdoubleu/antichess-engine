@@ -222,11 +222,37 @@ impl Game {
                     let valid_moves =
                         self.valid_moves_for_piece_impl(&cur_pos, only_check_currently_attacking);
                     for valid_move in valid_moves {
-                        all_valid_moves.push(ChessMove::new(
-                            *self.piece_at(r, c).unwrap(),
-                            cur_pos,
-                            valid_move,
-                        ));
+                        if self.piece_at_pos(&cur_pos).unwrap().piece_type == PieceType::Pawn
+                            && (valid_move.row == 0 || valid_move.row == 7)
+                        {
+                            all_valid_moves.push(ChessMove::new_with_context(
+                                cur_pos,
+                                valid_move,
+                                self,
+                                Some(Piece::new(PieceType::Queen, color)),
+                            ));
+                            all_valid_moves.push(ChessMove::new_with_context(
+                                cur_pos,
+                                valid_move,
+                                self,
+                                Some(Piece::new(PieceType::Rook, color)),
+                            ));
+                            all_valid_moves.push(ChessMove::new_with_context(
+                                cur_pos,
+                                valid_move,
+                                self,
+                                Some(Piece::new(PieceType::Bishop, color)),
+                            ));
+                            all_valid_moves.push(ChessMove::new_with_context(
+                                cur_pos,
+                                valid_move,
+                                self,
+                                Some(Piece::new(PieceType::Knight, color)),
+                            ));
+                        } else {
+                            all_valid_moves
+                                .push(ChessMove::new_with_context(cur_pos, valid_move, self, None));
+                        }
                     }
                 }
             }
@@ -246,11 +272,38 @@ impl Game {
                     let valid_moves = self.valid_moves_for_piece_impl(&cur_pos, true);
                     for valid_move in valid_moves {
                         if self.has_piece_with_color(&valid_move, color.opposite()) {
-                            all_valid_moves.push(ChessMove::new(
-                                *self.piece_at(r, c).unwrap(),
-                                cur_pos,
-                                valid_move,
-                            ));
+                            if self.piece_at_pos(&cur_pos).unwrap().piece_type == PieceType::Pawn
+                                && (valid_move.row == 0 || valid_move.row == 7)
+                            {
+                                all_valid_moves.push(ChessMove::new_with_context(
+                                    cur_pos,
+                                    valid_move,
+                                    self,
+                                    Some(Piece::new(PieceType::Queen, color)),
+                                ));
+                                all_valid_moves.push(ChessMove::new_with_context(
+                                    cur_pos,
+                                    valid_move,
+                                    self,
+                                    Some(Piece::new(PieceType::Rook, color)),
+                                ));
+                                all_valid_moves.push(ChessMove::new_with_context(
+                                    cur_pos,
+                                    valid_move,
+                                    self,
+                                    Some(Piece::new(PieceType::Bishop, color)),
+                                ));
+                                all_valid_moves.push(ChessMove::new_with_context(
+                                    cur_pos,
+                                    valid_move,
+                                    self,
+                                    Some(Piece::new(PieceType::Knight, color)),
+                                ));
+                            } else {
+                                all_valid_moves.push(ChessMove::new_with_context(
+                                    cur_pos, valid_move, self, None,
+                                ));
+                            }
                         }
                     }
                 }

@@ -50,7 +50,7 @@ fn alpha_beta_impl(game: &Game, color: Color, alpha: f64, beta: f64, depth: u32)
         best_eval = f64::INFINITY;
     }
 
-    let mut all_valid_moves = game.all_valid_moves_for_color_that_take(color);
+    let mut all_valid_moves: Vec<ChessMove> = game.all_valid_moves_for_color_that_take(color);
 
     if all_valid_moves.is_empty() {
         all_valid_moves = game.all_valid_moves_for_color(color);

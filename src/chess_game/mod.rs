@@ -56,5 +56,7 @@ pub struct ChessMove {
     pub piece: Piece,
     pub start_pos: Pos,
     pub end_pos: Pos,
+    /// we need to store the position of the captured piece in case of en passant
+    pub captured_piece: Option<(Piece, Pos)>,
     pub promotion: Option<Piece>,
 }

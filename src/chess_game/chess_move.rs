@@ -1,14 +1,52 @@
-use crate::chess_game::{ChessMove, Game, Piece, Pos};
+use crate::chess_game::{ChessMove, Game, Piece, PieceType, Pos};
 
 impl ChessMove {
     /// Creates a ChessMove
     /// If you want to create a chess move that includes a promotion, use `ChessMove::new_promo()`
-    pub fn new(piece: Piece, start_pos: Pos, end_pos: Pos) -> ChessMove {
+    pub fn new(
+        piece: Piece,
+        start_pos: Pos,
+        end_pos: Pos,
+        captured_piece: Option<(Piece, Pos)>,
+    ) -> ChessMove {
         ChessMove {
             piece,
             start_pos,
             end_pos,
+            captured_piece,
             promotion: None,
+        }
+    }
+
+    /// Pretty much the same as just the regular new function, but will take a game context to be
+    /// able to figure out what pieces were captured
+    pub fn new_with_context(
+        start_pos: Pos,
+        end_pos: Pos,
+        game: &Game,
+        promotion: Option<Piece>,
+    ) -> ChessMove {
+        let curr_piece = game.piece_at_pos(&start_pos).cloned().unwrap();
+
+        let captured_piece = game.piece_at_pos(&end_pos).cloned();
+
+        let captured_piece_data: Option<(Piece, Pos)> =
+            if let Some(the_captured_piece) = captured_piece {
+                Some((the_captured_piece, end_pos))
+            } else if curr_piece.piece_type == PieceType::Pawn && start_pos.col != end_pos.col {
+                let en_passant_pos = Pos::new(start_pos.row, end_pos.col);
+                let en_passant_piece = game.piece_at_pos(&en_passant_pos).cloned().unwrap();
+                Some((en_passant_piece, en_passant_pos))
+            } else {
+                None
+            };
+
+        ChessMove {
+            piece: curr_piece,
+            start_pos,
+            end_pos,
+            captured_piece: captured_piece_data,
+            promotion,
         }
     }
 
@@ -17,12 +55,14 @@ impl ChessMove {
         piece: Piece,
         start_pos: Pos,
         end_pos: Pos,
+        captured_piece: Option<(Piece, Pos)>,
         promotion: Option<Piece>,
     ) -> ChessMove {
         ChessMove {
             piece,
             start_pos,
             end_pos,
+            captured_piece,
             promotion,
         }
     }
@@ -57,7 +97,9 @@ impl ChessMove {
             None => panic!("No piece at start position"),
         };
 
-        ChessMove::new_promo(p, start_pos, end_pos, promotion)
+        let captured_piece = game.piece_at_pos(&end_pos).map(|&p| (p, end_pos));
+
+        ChessMove::new_promo(p, start_pos, end_pos, captured_piece, promotion)
     }
 }
 
