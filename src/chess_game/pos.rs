@@ -29,6 +29,10 @@ impl Pos {
         let row = 7 - (s.chars().nth(1).unwrap() as usize - 49);
         Pos::new(row, col)
     }
+
+    pub fn get_tuple(&self) -> (usize, usize) {
+        (self.row, self.col)
+    }
 }
 
 impl PartialEq for Pos {

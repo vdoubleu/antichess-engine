@@ -4,14 +4,14 @@ mod game;
 mod piece;
 mod pos;
 mod square;
-mod valid_move_finder;
+pub mod valid_move_finder;
 
 #[derive(Clone)]
 pub struct Game {
-    squares: [[Square; 8]; 8],
-    player_turn: Color,
-    turn_counter: i64,
-    winner: Option<Color>,
+    pub squares: [[Square; 8]; 8],
+    pub player_turn: Color,
+    pub turn_counter: i64,
+    pub winner: Option<Color>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -29,10 +29,10 @@ pub struct Square {
 #[derive(Copy, Clone, Debug)]
 pub struct Piece {
     pub piece_type: PieceType,
-    color: Color,
+    pub color: Color,
     /// when the piece last moved, it's -1 if it hasn't moved yet
-    last_moved: i64,
-    last_moved_from: Option<Pos>,
+    pub last_moved: i64,
+    pub last_moved_from: Option<Pos>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, clap::ValueEnum)]
@@ -53,8 +53,8 @@ pub enum PieceType {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
-    piece: Piece,
-    start_pos: Pos,
-    end_pos: Pos,
-    promotion: Option<Piece>,
+    pub piece: Piece,
+    pub start_pos: Pos,
+    pub end_pos: Pos,
+    pub promotion: Option<Piece>,
 }

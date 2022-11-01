@@ -9,17 +9,21 @@ pub fn min_max(game: &Game, color: Color) -> Option<ChessMove> {
 
     let mut best_score = f64::NEG_INFINITY;
 
-    let all_valid_moves = game.all_valid_moves_for_color(color);
+    let mut all_valid_moves = game.all_valid_moves_for_color_that_take(color);
 
     if all_valid_moves.is_empty() {
-        return None;
+        all_valid_moves = game.all_valid_moves_for_color(color);
+
+        if all_valid_moves.is_empty() {
+            return None;
+        }
     }
 
     for chess_move in all_valid_moves {
         let mut game_copy = game.clone();
         game_copy.make_move(&chess_move);
 
-        let score = min_max_impl(&game_copy, max_depth);
+        let score = min_max_impl(&game_copy, color.opposite(), max_depth);
 
         if score > best_score {
             best_score = score;
@@ -30,27 +34,29 @@ pub fn min_max(game: &Game, color: Color) -> Option<ChessMove> {
     best_move
 }
 
-fn min_max_impl(game: &Game, depth: u32) -> f64 {
-    let curr_turn = game.get_player_turn();
-
+fn min_max_impl(game: &Game, color: Color, depth: u32) -> f64 {
     if depth == 0 {
-        return evaluate(game, curr_turn);
+        return evaluate(game);
     }
 
     let mut best_score: f64 = f64::NEG_INFINITY;
-    if curr_turn == Color::Black {
+    if color == Color::Black {
         best_score = f64::INFINITY;
     }
 
-    let all_valid_moves = game.all_valid_moves_for_color(curr_turn);
+    let mut all_valid_moves = game.all_valid_moves_for_color_that_take(color);
+
+    if all_valid_moves.is_empty() {
+        all_valid_moves = game.all_valid_moves_for_color(color);
+    }
 
     for move_option in all_valid_moves {
         let mut new_game = game.clone();
         new_game.make_move(&move_option);
 
-        let res = min_max_impl(&new_game, depth - 1);
+        let res = min_max_impl(&new_game, color.opposite(), depth - 1);
 
-        if curr_turn == Color::White {
+        if color == Color::White {
             best_score = res.max(best_score);
         } else {
             best_score = res.min(best_score);
@@ -58,4 +64,25 @@ fn min_max_impl(game: &Game, depth: u32) -> f64 {
     }
 
     best_score
+}
+
+#[cfg(test)]
+mod min_max_tests {
+    use super::*;
+    use crate::chess_game::{Color, Game};
+
+    #[test]
+    fn test_min_max() {
+        let mut game = Game::new_starting_game();
+
+        let move1 = min_max(&game, Color::White);
+        assert!(move1.is_some());
+
+        game.make_move(&move1.unwrap());
+
+        let move2 = min_max(&game, Color::Black);
+        assert!(move2.is_some());
+
+        game.make_move(&move2.unwrap());
+    }
 }

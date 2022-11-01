@@ -68,40 +68,18 @@ impl Game {
         self
     }
 
-    pub fn get_squares_piece_type_of_color(
-        &self,
-        piece_type: PieceType,
-        color: Color,
-    ) -> Vec<Square> {
-        let mut squares = Vec::new();
+    pub fn get_all_pieces(&self) -> Vec<(Piece, Pos)> {
+        let mut pieces = Vec::new();
 
-        for r in self.squares.iter() {
-            for s in r.iter() {
-                if let Some(p) = s.piece {
-                    if p.piece_type == piece_type && p.color == color {
-                        squares.push(*s);
-                    }
+        for (r_ind, r) in self.squares.iter().enumerate() {
+            for (c_ind, s) in r.iter().enumerate() {
+                if let Some(piece) = s.piece {
+                    pieces.push((piece, Pos::new(r_ind, c_ind)));
                 }
             }
         }
 
-        squares
-    }
-
-    pub fn get_all_squares_of_color(&self, color: Color) -> Vec<Square> {
-        let mut squares = Vec::new();
-
-        for row in self.squares.iter() {
-            for square in row.iter() {
-                if let Some(piece) = square.piece {
-                    if piece.color == color {
-                        squares.push(*square);
-                    }
-                }
-            }
-        }
-
-        squares
+        pieces
     }
 
     /// Empties the board
@@ -370,7 +348,7 @@ impl Game {
 
             // check for castling
             let p = self.piece_at_pos(to).unwrap();
-            if p.piece_type == PieceType::King {
+            if p.piece_type == PieceType::King && (from.col as i16 - to.col as i16).abs() == 2 {
                 let (rook_to_pos, rook_from_pos) = if from.col == 4 && to.col == 6 {
                     (Pos::new(to.row, 5), Pos::new(to.row, 7))
                 } else if from.col == 4 && to.col == 2 {

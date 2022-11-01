@@ -1,9 +1,9 @@
-mod bishop_move_finder;
-mod king_move_finder;
-mod knight_move_finder;
-mod pawn_move_finder;
-mod queen_move_finder;
-mod rook_move_finder;
+pub mod bishop_move_finder;
+pub mod king_move_finder;
+pub mod knight_move_finder;
+pub mod pawn_move_finder;
+pub mod queen_move_finder;
+pub mod rook_move_finder;
 
 use crate::chess_game::valid_move_finder::bishop_move_finder::all_valid_moves_for_bishop;
 use crate::chess_game::valid_move_finder::king_move_finder::all_valid_moves_for_king;
