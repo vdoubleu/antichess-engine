@@ -1,6 +1,8 @@
 use crate::chess_game::valid_move_finder::*;
 use crate::chess_game::{Color, Game, Piece, PieceType, Pos};
 
+use crate::engine::position_scores::*;
+
 use std::collections::HashMap;
 
 struct EvalStore {
@@ -31,6 +33,14 @@ pub fn evaluate(game: &Game) -> f64 {
     // 12. Space
     // 13. Winnable
 
+    if let Some(winner) = game.game_winner() {
+        if winner == Color::White {
+            return f64::INFINITY;
+        } else {
+            return f64::NEG_INFINITY;
+        }
+    }
+
     let mut score = 0.0;
     let mut eval_store = EvalStore {
         black_support: HashMap::new(),
@@ -43,7 +53,7 @@ pub fn evaluate(game: &Game) -> f64 {
         let piece_color = piece.color;
 
         let piece_score = evaluate_material(&piece)
-            + evaluate_knight_bishop_positions(&piece, &pos)
+            + evaluate_piece_pos(&piece, &pos, &game)
             + evaluate_threats_and_support(game, &piece, &pos, &mut eval_store);
 
         if piece_color == Color::White {
@@ -81,26 +91,15 @@ fn evaluate_material(piece: &Piece) -> f64 {
 
 /// evalutes the positions of the knights
 /// The closer to the middle the knight is, the better
-fn evaluate_knight_bishop_positions(piece: &Piece, pos: &Pos) -> f64 {
-    if piece.piece_type == PieceType::Bishop || piece.piece_type == PieceType::Knight {
-        let row = pos.row;
-        let col = pos.col;
-
-        let row_score = if row < 4 {
-            row as f64
-        } else {
-            (7 - row) as f64
-        };
-        let col_score = if col < 4 {
-            col as f64
-        } else {
-            (7 - col) as f64
-        };
-
-        return (row_score + col_score) / 6.0;
+fn evaluate_piece_pos(piece: &Piece, pos: &Pos, game: &Game) -> f64 {
+    match piece.piece_type {
+        PieceType::Pawn => pawn_position_score(pos, piece.color),
+        PieceType::Knight => knight_position_score(pos, piece.color),
+        PieceType::Bishop => bishop_position_score(pos, piece.color),
+        PieceType::Rook => rook_position_score(pos, piece.color, game.turn_counter),
+        PieceType::Queen => queen_position_score(pos, piece.color, game.turn_counter),
+        PieceType::King => king_position_score(pos, piece.color, game.turn_counter),
     }
-
-    0.0
 }
 
 /// evaluates threats to either side

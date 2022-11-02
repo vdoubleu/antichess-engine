@@ -2,14 +2,6 @@ use crate::chess_game::{ChessMove, Color, Game};
 use rand::prelude::SliceRandom;
 
 pub fn random_move(game: &Game, color: Color) -> Option<ChessMove> {
-    let all_valid_moves_that_take = game.all_valid_moves_for_color_that_take(color);
-
-    if !all_valid_moves_that_take.is_empty() {
-        let mut rng = rand::thread_rng();
-        return all_valid_moves_that_take.choose(&mut rng).copied();
-    }
-
-    // otherwise, just pick a random move
     let all_valid_moves = game.all_valid_moves_for_color(color);
     let mut rng = rand::thread_rng();
     all_valid_moves.choose(&mut rng).copied()

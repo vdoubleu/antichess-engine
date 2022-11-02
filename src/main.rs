@@ -15,6 +15,14 @@ struct Args {
     color: Color,
 }
 
+fn print_move_list(moves: &Vec<ChessMove>) {
+    println!("valid moves: ");
+    for m in moves {
+        print!("{} ", m);
+    }
+    println!();
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -37,9 +45,12 @@ fn main() {
             println!("Game over. Winner: {}", winner);
             return;
         }
-    }
 
-    println!("{}", game);
+        println!("{}", game);
+
+        let opp_valid_moves = game.all_valid_moves_for_color(args.color.opposite());
+        print_move_list(&opp_valid_moves);
+    }
 
     for line in stdin.lock().lines() {
         match line {
@@ -68,30 +79,11 @@ fn main() {
                 }
 
                 println!("{}", game);
+
+                let opp_valid_moves = game.all_valid_moves_for_color(args.color.opposite());
+                print_move_list(&opp_valid_moves);
             }
             Err(error) => println!("error: {}", error),
         }
     }
-
-    //game.from_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".to_string());
-
-    // println!("{}", game);
-
-    // let moves = game.all_valid_moves_for_color(Color::White);
-    // // println!("{:?}", moves);
-
-    // // only look at last 5 moves
-    // //let moves = moves.iter().rev().take(5).rev().collect::<Vec<_>>();
-
-    // // for some reason, when printing all possible starting moves
-    // // for white at once, the shell will chop off weird bits of the last
-    // // board. I've double checked that everything is good, and it
-    // // works fine if you print only parts of it at a time.
-    // for m in moves {
-    //     let mut game_copy = game.clone();
-    //     game_copy.make_move(&m, None);
-
-    //     println!("{}", m);
-    //     println!("{}", game_copy);
-    // }
 }

@@ -2,7 +2,7 @@ use crate::chess_game::valid_move_finder::{
     all_bishop_moves, all_king_moves, all_knight_moves, all_pawn_moves, all_queen_moves,
     all_rook_moves,
 };
-use crate::chess_game::{ChessMove, Color, Game, Piece, PieceType, Pos, Square};
+use crate::chess_game::{ChessMove, Color, Game, Piece, PieceType, Pos, Square, promotable_pieces};
 use std::fmt;
 
 impl Game {
@@ -62,8 +62,8 @@ impl Game {
 
     /// Adds a piece at a given square. Not sure why exactly you would want this...
     /// This is mostly for internal use when creating a new game
-    pub fn add_piece(&mut self, piece: PieceType, color: Color, pos: &Pos) -> &mut Self {
-        self.square_at_pos_mut(pos).piece = Some(Piece::new(piece, color));
+    pub fn add_piece(&mut self, piece: PieceType, color: Color, last_moved: i64, last_moved_from: Option<Pos>, pos: &Pos) -> &mut Self {
+        self.square_at_pos_mut(pos).piece = Some(Piece::new_moved(piece, color, last_moved, last_moved_from));
 
         self
     }
@@ -204,8 +204,20 @@ impl Game {
     }
 
     /// Returns a vector of all the valid moves for the color
+    /// If there are any moves that take, it will prioritize those by only listing those
     pub fn all_valid_moves_for_color(&self, color: Color) -> Vec<ChessMove> {
-        self.all_valid_moves_for_color_impl(color, false)
+        let all_valid_moves = self.all_valid_moves_for_color_impl(color, false);
+        let moves_that_take = all_valid_moves
+            .iter()
+            .filter(|m| self.has_piece_with_color(&m.end_pos, color.opposite()))
+            .map(|m| m.clone())
+            .collect::<Vec<ChessMove>>();
+
+        if moves_that_take.len() > 0 {
+            moves_that_take
+        } else {
+            all_valid_moves
+        }
     }
 
     /// WARNING!! This is an implementation function, you probably don't want to use this.
@@ -231,85 +243,17 @@ impl Game {
                         if self.piece_at_pos(&cur_pos).unwrap().piece_type == PieceType::Pawn
                             && (valid_move.row == 0 || valid_move.row == 7)
                         {
-                            all_valid_moves.push(ChessMove::new_with_context(
-                                cur_pos,
-                                valid_move,
-                                self,
-                                Some(Piece::new(PieceType::Queen, color)),
-                            ));
-                            all_valid_moves.push(ChessMove::new_with_context(
-                                cur_pos,
-                                valid_move,
-                                self,
-                                Some(Piece::new(PieceType::Rook, color)),
-                            ));
-                            all_valid_moves.push(ChessMove::new_with_context(
-                                cur_pos,
-                                valid_move,
-                                self,
-                                Some(Piece::new(PieceType::Bishop, color)),
-                            ));
-                            all_valid_moves.push(ChessMove::new_with_context(
-                                cur_pos,
-                                valid_move,
-                                self,
-                                Some(Piece::new(PieceType::Knight, color)),
-                            ));
+                            for promotable_piece_type in promotable_pieces() {
+                                all_valid_moves.push(ChessMove::new_with_context(
+                                    cur_pos,
+                                    valid_move,
+                                    self,
+                                    Some(Piece::new(promotable_piece_type, color)),
+                                ));
+                            }
                         } else {
                             all_valid_moves
                                 .push(ChessMove::new_with_context(cur_pos, valid_move, self, None));
-                        }
-                    }
-                }
-            }
-        }
-
-        all_valid_moves
-    }
-
-    /// Returns all the valid moves that a color can make that take pieces.
-    pub fn all_valid_moves_for_color_that_take(&self, color: Color) -> Vec<ChessMove> {
-        let mut all_valid_moves: Vec<ChessMove> = Vec::new();
-
-        for r in 0..8 {
-            for c in 0..8 {
-                let cur_pos = Pos::new(r, c);
-                if self.has_piece_with_color(&cur_pos, color) {
-                    let valid_moves = self.valid_moves_for_piece_impl(&cur_pos, true);
-                    for valid_move in valid_moves {
-                        if self.has_piece_with_color(&valid_move, color.opposite()) {
-                            if self.piece_at_pos(&cur_pos).unwrap().piece_type == PieceType::Pawn
-                                && (valid_move.row == 0 || valid_move.row == 7)
-                            {
-                                all_valid_moves.push(ChessMove::new_with_context(
-                                    cur_pos,
-                                    valid_move,
-                                    self,
-                                    Some(Piece::new(PieceType::Queen, color)),
-                                ));
-                                all_valid_moves.push(ChessMove::new_with_context(
-                                    cur_pos,
-                                    valid_move,
-                                    self,
-                                    Some(Piece::new(PieceType::Rook, color)),
-                                ));
-                                all_valid_moves.push(ChessMove::new_with_context(
-                                    cur_pos,
-                                    valid_move,
-                                    self,
-                                    Some(Piece::new(PieceType::Bishop, color)),
-                                ));
-                                all_valid_moves.push(ChessMove::new_with_context(
-                                    cur_pos,
-                                    valid_move,
-                                    self,
-                                    Some(Piece::new(PieceType::Knight, color)),
-                                ));
-                            } else {
-                                all_valid_moves.push(ChessMove::new_with_context(
-                                    cur_pos, valid_move, self, None,
-                                ));
-                            }
                         }
                     }
                 }
@@ -354,39 +298,63 @@ impl Game {
     }
 
     pub fn unmake_move(&mut self, user_move: &ChessMove) -> &mut Self {
+        fn is_start_pawn(piece_type: PieceType, row: usize) -> bool {
+            piece_type == PieceType::Pawn && (row == 1 || row == 6)
+        }
+
+        fn is_castle_king(piece_type: PieceType, col_start: usize, col_end: usize) -> bool {
+            piece_type == PieceType::King && (col_start as i8 - col_end as i8).abs() == 2
+        }
+
         // move piece back
+        self.remove_piece(&user_move.end_pos);
         if user_move.promotion.is_some() {
-            self.remove_piece(&user_move.end_pos);
-            self.add_piece(PieceType::Pawn, user_move.piece.color, &user_move.start_pos);
+            self.add_piece(PieceType::Pawn, user_move.piece.color, 0, Some(user_move.end_pos), &user_move.start_pos);
         } else {
-            self.relocate_piece(&user_move.end_pos, &user_move.start_pos);
+            let (last_moved, last_moved_location) = if is_start_pawn(user_move.piece.piece_type, user_move.start_pos.row) || is_castle_king(user_move.piece.piece_type, user_move.start_pos.col, user_move.end_pos.col) {
+                (-1, None)
+            } else {
+                (0, Some(Pos::new(0, 0)))
+            };
+
+            self.add_piece(user_move.piece.piece_type, user_move.piece.color, last_moved, last_moved_location, &user_move.start_pos);
         }
 
         // uncastle if necessary
         if user_move.piece.piece_type == PieceType::King
             && (user_move.start_pos.col as i8 - user_move.end_pos.col as i8).abs() == 2
         {
-            if user_move.end_pos.col == 2 {
-                self.relocate_piece(
-                    &Pos::new(user_move.end_pos.row, 3),
-                    &Pos::new(user_move.end_pos.row, 0),
-                );
+            let (rook_move_start, rook_move_end) = if user_move.end_pos.col == 2 {
+                (Pos::new(user_move.end_pos.row, 3), Pos::new(user_move.end_pos.row, 0))
             } else {
-                self.relocate_piece(
-                    &Pos::new(user_move.end_pos.row, 5),
-                    &Pos::new(user_move.end_pos.row, 7),
-                );
-            }
+                (Pos::new(user_move.end_pos.row, 5), Pos::new(user_move.end_pos.row, 7))
+            };
+
+            self.remove_piece(&rook_move_end);
+            self.add_piece(PieceType::Rook, user_move.piece.color, -1, None, &rook_move_start);
+            self.relocate_piece(&rook_move_start, &rook_move_end);
         }
 
         // untake piece
         if let Some((captured_piece, captured_piece_pos)) = user_move.captured_piece {
+            let (last_moved, last_moved_from) = if is_start_pawn(captured_piece.piece_type, captured_piece_pos.row) {
+                (-1, None)
+            } else {
+                (0, Some(captured_piece_pos))
+            };
+
             self.add_piece(
                 captured_piece.piece_type,
                 captured_piece.color,
+                last_moved,
+                last_moved_from,
                 &captured_piece_pos,
             );
         }
+
+        self.player_turn = self.player_turn.opposite();
+        self.turn_counter -= 1;
+        self.winner = None;
 
         self
     }

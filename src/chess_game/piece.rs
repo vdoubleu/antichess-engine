@@ -1,4 +1,4 @@
-use crate::chess_game::{Color, Piece, PieceType};
+use crate::chess_game::{Color, Piece, PieceType, Pos};
 
 impl Piece {
     /// Creates a new Piece with a given color
@@ -8,6 +8,15 @@ impl Piece {
             color,
             last_moved: -1,
             last_moved_from: None,
+        }
+    }
+
+    pub fn new_moved(piece_type: PieceType, color: Color, last_moved: i64, last_moved_from: Option<Pos>) -> Piece {
+        Piece {
+            piece_type,
+            color,
+            last_moved,
+            last_moved_from,
         }
     }
 

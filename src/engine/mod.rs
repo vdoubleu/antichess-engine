@@ -1,6 +1,7 @@
 mod alpha_beta;
 mod evaluate_game;
 mod random;
+mod position_scores;
 
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::alpha_beta::alpha_beta;

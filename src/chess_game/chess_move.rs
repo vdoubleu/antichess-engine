@@ -108,3 +108,9 @@ impl std::fmt::Display for ChessMove {
         write!(f, "{}", self.get_xboard_algebraic_notation())
     }
 }
+
+impl PartialEq for ChessMove {
+    fn eq(&self, other: &Self) -> bool {
+        self.start_pos == other.start_pos && self.end_pos == other.end_pos
+    }
+}

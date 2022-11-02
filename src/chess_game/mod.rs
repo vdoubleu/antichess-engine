@@ -60,3 +60,7 @@ pub struct ChessMove {
     pub captured_piece: Option<(Piece, Pos)>,
     pub promotion: Option<Piece>,
 }
+
+pub fn promotable_pieces() -> Vec<PieceType> {
+    vec![PieceType::Queen, PieceType::Rook, PieceType::Bishop, PieceType::Knight]
+}
