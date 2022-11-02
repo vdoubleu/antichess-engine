@@ -1,44 +1,124 @@
 use crate::chess_game::Pos;
 
-impl Pos {
-    pub fn default() -> Pos {
-        Pos { row: 0, col: 0 }
+pub trait PosExt {
+    fn new(row: usize, col: usize) -> Self;
+    fn is_on_board(self) -> bool;
+    fn from_row_col(row: usize, col: usize) -> Self;
+    fn to_row_col(self) -> (usize, usize);
+    fn row(self) -> usize;
+    fn col(self) -> usize;
+    fn to_row_col_as_i8(self) -> (i8, i8);
+    fn from_alg_notation(alg_notation: &str) -> Self;
+    fn to_alg_notation(self) -> String;
+}
+
+pub static BOARD_START: usize = 21;
+pub static BOARD_END: usize = 98;
+
+impl PosExt for Pos {
+    fn new(row: usize, col: usize) -> Self {
+        row * 10 + col + BOARD_START
     }
 
-    pub fn new(r: usize, c: usize) -> Pos {
-        if r > 7 || c > 7 {
-            panic!("Invalid position: ({}, {})", r, c);
+    fn is_on_board(self) -> bool {
+        self >= BOARD_START && self <= BOARD_END && self % 10 != 0 && self % 10 != 9
+    }
+
+    fn from_row_col(row: usize, col: usize) -> Self {
+        row * 10 + col + BOARD_START
+    }
+
+    fn to_row_col(self) -> (usize, usize) {
+        let row = (self - BOARD_START) / 10;
+        let col = (self - BOARD_START) % 10;
+        (row, col)
+    }
+
+    fn row(self) -> usize {
+        (self - BOARD_START) / 10
+    }
+
+    fn col(self) -> usize {
+        (self - BOARD_START) % 10
+    }
+
+    fn to_row_col_as_i8(self) -> (i8, i8) {
+        let (row, col) = self.to_row_col();
+        (row as i8, col as i8)
+    }
+
+    fn from_alg_notation(alg_notation: &str) -> Self {
+        let mut chars = alg_notation.chars();
+        let col = chars.next().unwrap() as usize - 'a' as usize + 1;
+        let row = chars.next().unwrap() as usize - '1' as usize + 1;
+        Self::from_row_col(row, col)
+    }
+
+    fn to_alg_notation(self) -> String {
+        let (row, col) = self.to_row_col();
+        let col = (col + 'a' as usize - 1) as u8 as char;
+        let row = (row + '1' as usize - 1) as u8 as char;
+        format!("{}{}", col, row)
+    }
+}
+
+#[cfg(test)]
+mod pos_tests {
+    use super::*;
+
+    #[test]
+    fn test_is_on_board() {
+        let test_pos: Vec<(Pos, bool)> = vec![
+            (0, false),
+            (20, false),
+            (21, true),
+            (28, true),
+            (29, false),
+            (30, false),
+            (99, false),
+            (100, false),
+            (101, false),
+        ];
+
+        for (pos, expected) in test_pos {
+            assert_eq!(pos.is_on_board(), expected);
         }
-
-        Pos { row: r, col: c }
     }
 
-    /// Returns the algebraic notation of the position
-    /// Pos { row: 0, col: 0 } -> "a1"
-    pub fn get_algebraic_notation(&self) -> String {
-        let mut notation = String::new();
-        notation.push((self.col as u8 + 97) as char);
-        notation.push(((7 - self.row) as u8 + 49) as char);
-        notation
+    #[test]
+    fn test_to_from_row_col() {
+        let test_pos: Vec<((usize, usize), Pos)> = vec![
+            ((0, 0), 21),
+            ((0, 1), 22),
+            ((0, 7), 28),
+            ((1, 0), 31),
+            ((1, 1), 32),
+            ((1, 7), 38),
+            ((7, 0), 81),
+            ((7, 1), 82),
+            ((7, 7), 88),
+        ];
+
+        for ((row, col), expected) in test_pos {
+            assert_eq!(Pos::from_row_col(row, col), expected);
+            assert_eq!(expected.to_row_col(), (row, col));
+        }
     }
 
-    /// Takes a chess position in standard chess notation and returns a Pos
-    /// For example, "a1" would return Pos { row: 7, col: 0 }
-    pub fn from_algebraic_notation(s: String) -> Pos {
-        let col = s.chars().next().unwrap() as usize - 97;
-        let row = 7 - (s.chars().nth(1).unwrap() as usize - 49);
-        Pos::new(row, col)
-    }
+    #[test]
+    fn test_to_from_alg_notation() {
+        let test_pos: Vec<(&str, Pos)> = vec![
+            ("a1", 21),
+            ("a2", 31),
+            ("a8", 81),
+            ("h1", 28),
+            ("h2", 38),
+            ("h8", 88),
+        ];
 
-    pub fn get_tuple(&self) -> (usize, usize) {
-        (self.row, self.col)
+        for (alg_notation, expected) in test_pos {
+            assert_eq!(Pos::from_alg_notation(alg_notation), expected);
+            assert_eq!(expected.to_alg_notation(), alg_notation);
+        }
     }
 }
-
-impl PartialEq for Pos {
-    fn eq(&self, other: &Self) -> bool {
-        self.row == other.row && self.col == other.col
-    }
-}
-
-impl Eq for Pos {}

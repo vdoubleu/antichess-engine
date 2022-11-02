@@ -1,8 +1,8 @@
-use antichess_engine::chess_game::{ChessMove, Game, Color};
+use antichess_engine::chess_game::{ChessMove, Color, Game};
 
 enum MoveDirection {
     Forward,
-    Backward, 
+    Backward,
     Split,
 }
 
@@ -70,7 +70,8 @@ fn test_unmake_move_remake_repeat() {
     for m in &move_order {
         match m {
             MoveDirection::Forward => {
-                let curr_move = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
+                let curr_move =
+                    ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
                 println!("Making move: {:?}", curr_move);
                 game.make_move(&curr_move);
                 move_store.push(curr_move);
@@ -82,7 +83,7 @@ fn test_unmake_move_remake_repeat() {
                 curr_move_id -= 1;
             }
             _ => {}
-        } 
+        }
         println!("{} ", &game);
     }
 }
@@ -91,29 +92,29 @@ fn test_unmake_move_remake_repeat() {
 fn test_unmake_move_remake_repeat_2() {
     let mut game = Game::new_starting_game();
 
-    let moves_strings: Vec<String> = vec![
-        "a2a3".to_string(),
-        "b8c6".to_string(),
-        "a3a4".to_string(),
-    ];
+    let moves_strings: Vec<String> =
+        vec!["a2a3".to_string(), "b8c6".to_string(), "a3a4".to_string()];
 
     let mut move_store: Vec<ChessMove> = Vec::new();
     let mut curr_move_id = 0;
 
     // white moves pawn
-    let curr_move_1 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
+    let curr_move_1 =
+        ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
     game.make_move(&curr_move_1);
     move_store.push(curr_move_1);
     curr_move_id += 1;
 
     // black moves knight
-    let curr_move_2 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
+    let curr_move_2 =
+        ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
     game.make_move(&curr_move_2);
     move_store.push(curr_move_2);
     curr_move_id += 1;
 
     // white moves pawn
-    let curr_move_3 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
+    let curr_move_3 =
+        ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
     game.make_move(&curr_move_3);
     move_store.push(curr_move_3);
     curr_move_id += 1;
@@ -123,17 +124,40 @@ fn test_unmake_move_remake_repeat_2() {
 
     let white_moves = game.all_valid_moves_for_color(Color::White);
 
-    assert!(white_moves.contains(&ChessMove::from_xboard_algebraic_notation(&"a3a4".to_string(), &game)));
-    assert!(!white_moves.contains(&ChessMove::from_xboard_algebraic_notation(&"a3a5".to_string(), &game)));
+    assert!(
+        white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
+            &"a3a4".to_string(),
+            &game
+        ))
+    );
+    assert!(
+        !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
+            &"a3a5".to_string(),
+            &game
+        ))
+    );
 
     // black undoes knight move
     game.unmake_move(&curr_move_2);
 
     // black tries new knight move
-    game.make_move(&ChessMove::from_xboard_algebraic_notation(&"b8a6".to_string(), &game));
+    game.make_move(&ChessMove::from_xboard_algebraic_notation(
+        &"b8a6".to_string(),
+        &game,
+    ));
 
-    assert!(white_moves.contains(&ChessMove::from_xboard_algebraic_notation(&"a3a4".to_string(), &game)));
-    assert!(!white_moves.contains(&ChessMove::from_xboard_algebraic_notation(&"a3a5".to_string(), &game)));
+    assert!(
+        white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
+            &"a3a4".to_string(),
+            &game
+        ))
+    );
+    assert!(
+        !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
+            &"a3a5".to_string(),
+            &game
+        ))
+    );
 
     //         MoveDirection::Backward => {
     //             let curr_move = move_store.pop().unwrap();

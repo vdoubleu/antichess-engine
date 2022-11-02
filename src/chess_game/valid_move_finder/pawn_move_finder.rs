@@ -1,67 +1,70 @@
-use crate::chess_game::valid_move_finder::move_within_board_bounds;
-use crate::chess_game::{Color, Game, PieceType, Pos};
+use crate::chess_game::pos::PosExt;
+use crate::chess_game::{Color, Game, Pos};
 
-pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
+pub fn all_valid_moves_for_pawn(
+    game: &Game,
+    pos: Pos,
+    only_check_currently_attacking: bool,
+) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
 
-    let row = pos.row;
-    let col = pos.col;
-
-    let piece = match game.piece_at(row, col) {
+    let piece = match game.get_piece(pos) {
         Some(p) => p,
         None => return valid_moves,
     };
 
-    if piece.piece_type != PieceType::Pawn {
-        return valid_moves;
-    }
-
     let color = piece.color;
-    let has_moved = piece.has_moved();
 
-    let pawn_moves: Vec<(i16, i16)> = match color {
-        Color::White => vec![(-1, 0), (-2, 0), (-1, 1), (-1, -1)],
-        Color::Black => vec![(1, 0), (2, 0), (1, -1), (1, 1)],
+    let pawn_moves: Vec<i8> = match color {
+        Color::White => vec![-10, -20, -9, -11],
+        Color::Black => vec![10, 20, 9, 11],
     };
 
-    for (row_offset, col_offset) in pawn_moves {
-        let new_row = (row as i16) + row_offset;
-        let new_col = (col as i16) + col_offset;
+    for move_dist in pawn_moves {
+        let new_pos = (pos as i8 + move_dist) as Pos;
 
-        if !move_within_board_bounds(new_row, new_col) {
+        if !new_pos.is_on_board() {
             continue;
         }
-
-        let new_pos = Pos::new(new_row as usize, new_col as usize);
 
         // if moving diagonally, check if there is a piece to capture
         // either capture directly, or en passant
-        if col_offset != 0 && is_en_passant(game, pos, &new_pos) {
-            valid_moves.push(new_pos);
+        if move_dist.abs() == 9 || move_dist.abs() == 11 {
+            if game.has_piece_with_color(new_pos, color.opposite())
+                || is_en_passant(game, pos, new_pos)
+            {
+                valid_moves.push(new_pos);
+            }
             continue;
         }
 
-        if col_offset != 0 && game.is_empty_square(&new_pos) {
+        // this is used when trying to determine if you can castle. Moving forwards isn't attacking
+        // and so pawns moving forward can't stop castling.
+        if only_check_currently_attacking {
             continue;
         }
 
-        // if moving forward, check if there is a piece in the way
-        if col_offset == 0 && row_offset.abs() >= 1 && !game.is_empty_square(&new_pos) {
+        // if moving forward, check if there is already a piece there
+        if (move_dist.abs() == 10 || move_dist.abs() == 20) && game.board[new_pos].is_some() {
             continue;
         }
 
-        if col_offset == 0 && row_offset.abs() == 2 {
-            if has_moved {
+        // if wanting to move two squares forward
+        if move_dist.abs() == 20 {
+            // check if on starting row
+            let starting_row = match color {
+                Color::White => 1,
+                Color::Black => 6,
+            };
+
+            if new_pos.row() != starting_row {
+                // not on starting row, we cannot move two squares forward
                 continue;
             }
 
-            let row_offset_2 = match color {
-                Color::White => -1,
-                Color::Black => 1,
-            };
-
-            let in_front = Pos::new((row as i16 + row_offset_2) as usize, col);
-            if !game.is_empty_square(&in_front) {
+            // check if there was a piece right in front blocking us
+            let one_square_forward = (pos as i8 + move_dist / 2) as Pos;
+            if game.board[one_square_forward].is_some() {
                 continue;
             }
         }
@@ -72,34 +75,20 @@ pub fn all_valid_moves_for_pawn(game: &Game, pos: &Pos) -> Vec<Pos> {
     valid_moves
 }
 
-fn is_en_passant(game: &Game, pawn_curr_pos: &Pos, move_pos: &Pos) -> bool {
-    let target_pos = Pos::new(pawn_curr_pos.row, move_pos.col);
-    // there is a piece that just moved beside us
-    let target_piece = match game.piece_at(target_pos.row, target_pos.col) {
-        Some(p) => p,
-        None => return false,
-    };
+fn is_en_passant(game: &Game, pawn_curr_pos: Pos, move_pos: Pos) -> bool {
+    let en_passant_pawn_pos = Pos::new(pawn_curr_pos.row(), move_pos.col());
 
-    // the piece is a pawn
-    if target_piece.piece_type != PieceType::Pawn {
+    if game.en_passant_pos.is_none() {
         return false;
     }
 
-    // the piece is on the other side
-    if target_piece.color == game.player_turn {
+    let (ep_row, ep_col) = game.en_passant_pos.unwrap().to_row_col();
+
+    if ep_row != pawn_curr_pos.row() {
         return false;
     }
 
-    // the piece has just moved
-    if target_piece.last_moved != game.turn_counter - 1 {
-        return false;
-    }
-
-    // the piece just moved 2 spaces
-    if target_piece.last_moved_from.is_none()
-        || ((target_piece.last_moved_from.unwrap().row as i16) - (pawn_curr_pos.row as i16)).abs()
-            != 2
-    {
+    if ep_col != move_pos.col() {
         return false;
     }
 
@@ -112,10 +101,10 @@ mod pawn_tests {
 
     #[test]
     fn test_valid_pawn_moves_black() {
-        let game = Game::from_fen_notation("8/5p2/4P1P1/8/8/8/8/8".to_string());
+        let game = Game::from_fen_notation("8/5p2/4P1P1/8/8/8/8/8");
         let pos = Pos::new(1, 5);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, &pos);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos);
         let expected_moves = vec![
             Pos::new(2, 5),
             Pos::new(3, 5),
@@ -129,10 +118,10 @@ mod pawn_tests {
 
     #[test]
     fn test_valid_pawn_moves_white() {
-        let game = Game::from_fen_notation("8/8/8/8/8/4p1p1/5P2/8".to_string());
+        let game = Game::from_fen_notation("8/8/8/8/8/4p1p1/5P2/8");
         let pos = Pos::new(6, 5);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, &pos);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos);
         let expected_moves = vec![
             Pos::new(5, 5),
             Pos::new(4, 5),

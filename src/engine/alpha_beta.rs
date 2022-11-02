@@ -46,7 +46,14 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
     best_move
 }
 
-fn alpha_beta_impl(game: &mut Game, color: Color, alpha: f64, beta: f64, curr_depth: i32, max_depth: i32) -> f64 {
+fn alpha_beta_impl(
+    game: &mut Game,
+    color: Color,
+    alpha: f64,
+    beta: f64,
+    curr_depth: i32,
+    max_depth: i32,
+) -> f64 {
     if curr_depth <= 0 || max_depth <= 0 {
         return evaluate(game);
     }
@@ -66,7 +73,11 @@ fn alpha_beta_impl(game: &mut Game, color: Color, alpha: f64, beta: f64, curr_de
         let mut new_game = game.clone();
         new_game.make_move(&move_option);
 
-        let new_curr_depth = if valid_moves_len <= 3 { curr_depth - 1 } else { curr_depth - 2 };
+        let new_curr_depth = if valid_moves_len <= 3 {
+            curr_depth - 1
+        } else {
+            curr_depth - 2
+        };
 
         let eval = alpha_beta_impl(
             &mut new_game,
