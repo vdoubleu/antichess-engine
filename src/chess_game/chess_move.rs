@@ -1,68 +1,13 @@
+use crate::chess_game::pos::PosExt;
 use crate::chess_game::{ChessMove, Game, Piece, PieceType, Pos};
 
 impl ChessMove {
     /// Creates a ChessMove
     /// If you want to create a chess move that includes a promotion, use `ChessMove::new_promo()`
-    pub fn new(
-        piece: Piece,
-        start_pos: Pos,
-        end_pos: Pos,
-        captured_piece: Option<(Piece, Pos)>,
-    ) -> ChessMove {
+    pub fn new(start_pos: Pos, end_pos: Pos, promotion: Option<PieceType>) -> ChessMove {
         ChessMove {
-            piece,
             start_pos,
             end_pos,
-            captured_piece,
-            promotion: None,
-        }
-    }
-
-    /// Pretty much the same as just the regular new function, but will take a game context to be
-    /// able to figure out what pieces were captured
-    pub fn new_with_context(
-        start_pos: Pos,
-        end_pos: Pos,
-        game: &Game,
-        promotion: Option<Piece>,
-    ) -> ChessMove {
-        let curr_piece = game.piece_at_pos(&start_pos).cloned().unwrap();
-
-        let captured_piece = game.piece_at_pos(&end_pos).cloned();
-
-        let captured_piece_data: Option<(Piece, Pos)> =
-            if let Some(the_captured_piece) = captured_piece {
-                Some((the_captured_piece, end_pos))
-            } else if curr_piece.piece_type == PieceType::Pawn && start_pos.col != end_pos.col {
-                let en_passant_pos = Pos::new(start_pos.row, end_pos.col);
-                let en_passant_piece = game.piece_at_pos(&en_passant_pos).cloned().unwrap();
-                Some((en_passant_piece, en_passant_pos))
-            } else {
-                None
-            };
-
-        ChessMove {
-            piece: curr_piece,
-            start_pos,
-            end_pos,
-            captured_piece: captured_piece_data,
-            promotion,
-        }
-    }
-
-    /// Creates a new ChessMove with a promotion
-    pub fn new_promo(
-        piece: Piece,
-        start_pos: Pos,
-        end_pos: Pos,
-        captured_piece: Option<(Piece, Pos)>,
-        promotion: Option<Piece>,
-    ) -> ChessMove {
-        ChessMove {
-            piece,
-            start_pos,
-            end_pos,
-            captured_piece,
             promotion,
         }
     }
@@ -70,41 +15,63 @@ impl ChessMove {
     /// xboard notation is a little different from standard algebraic notation
     /// it takes the first coordinate as the start position and the second as the end position
     /// so for example, e2e4 is the move e2 to e4
-    pub fn get_xboard_algebraic_notation(&self) -> String {
+    pub fn get_in_xboard_algebraic_notation(&self) -> String {
         let mut notation = String::new();
-        notation += self.start_pos.get_algebraic_notation().as_str();
-        notation += self.end_pos.get_algebraic_notation().as_str();
+        notation += self.start_pos.to_alg_notation().as_str();
+        notation += self.end_pos.to_alg_notation().as_str();
 
         if let Some(promo) = &self.promotion {
-            notation += promo.char_notation().to_lowercase().as_str();
+            notation += promo
+                .char_notation()
+                .to_lowercase()
+                .collect::<String>()
+                .as_str();
         }
 
         notation
     }
 
     /// Creates a ChessMove from xboard algebraic notation
-    pub fn from_xboard_algebraic_notation(s: &String, game: &Game) -> ChessMove {
-        let start_pos = Pos::from_algebraic_notation(s[0..2].to_string());
-        let end_pos = Pos::from_algebraic_notation(s[2..4].to_string());
+    pub fn from_xboard_algebraic_notation(s: &str) -> ChessMove {
+        let start_pos = Pos::from_alg_notation(&s[0..2]);
+        let end_pos = Pos::from_alg_notation(&s[2..4]);
         let promotion = if s.len() == 5 {
-            Some(Piece::from_char(s[4..5].chars().next().unwrap()))
+            Some(Piece::from_char(s[4..5].chars().next().unwrap()).piece_type)
         } else {
             None
         };
 
-        let p = match game.piece_at_pos(&start_pos) {
-            Some(&p) => p,
-            None => panic!("No piece at start position"),
-        };
+        ChessMove::new(start_pos, end_pos, promotion)
+    }
 
-        let captured_piece = game.piece_at_pos(&end_pos).map(|&p| (p, end_pos));
+    pub fn is_en_passant(&self, game: &Game) -> bool {
+        let to_col = self.end_pos.col() as i8;
+        let from_col = self.start_pos.col() as i8;
+        if let Some(moving_piece) = game.get_piece(self.start_pos) {
+            if moving_piece.piece_type != PieceType::Pawn {
+                return false;
+            }
+        }
 
-        ChessMove::new_promo(p, start_pos, end_pos, captured_piece, promotion)
+        if let Some(en_passant_pos) = game.en_passant_pos {
+            let ep_col = en_passant_pos.col() as i8;
+            (to_col - from_col).abs() == 1 && game.board[self.end_pos].is_none() && ep_col == to_col
+        } else {
+            false
+        }
     }
 }
 
 impl std::fmt::Display for ChessMove {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.get_xboard_algebraic_notation())
+        write!(f, "{}", self.get_in_xboard_algebraic_notation())
+    }
+}
+
+impl PartialEq for ChessMove {
+    fn eq(&self, other: &Self) -> bool {
+        self.start_pos == other.start_pos
+            && self.end_pos == other.end_pos
+            && self.promotion == other.promotion
     }
 }

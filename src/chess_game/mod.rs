@@ -1,38 +1,37 @@
-mod chess_move;
-mod color;
-mod game;
-mod piece;
-mod pos;
-mod square;
+pub mod chess_move;
+pub mod color;
+pub mod game;
+pub mod piece;
+pub mod pos;
+pub mod undo_move;
 pub mod valid_move_finder;
+
+pub type Pos = usize;
 
 #[derive(Clone)]
 pub struct Game {
-    pub squares: [[Square; 8]; 8],
+    pub board: [Option<Piece>; 120],
     pub player_turn: Color,
     pub turn_counter: i64,
+    pub castle_availability: [bool; 4],
+    pub en_passant_pos: Option<Pos>,
+
     pub winner: Option<Color>,
+
+    pub undo_move_history: Vec<UndoMove>,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Pos {
-    pub row: usize,
-    pub col: usize,
+pub enum CastleTypes {
+    WhiteKing = 0,
+    WhiteQueen = 1,
+    BlackKing = 2,
+    BlackQueen = 3,
 }
 
-#[derive(Copy, Clone)]
-pub struct Square {
-    pub pos: Pos,
-    pub piece: Option<Piece>,
-}
-
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: Color,
-    /// when the piece last moved, it's -1 if it hasn't moved yet
-    pub last_moved: i64,
-    pub last_moved_from: Option<Pos>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, clap::ValueEnum)]
@@ -53,10 +52,30 @@ pub enum PieceType {
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
-    pub piece: Piece,
     pub start_pos: Pos,
     pub end_pos: Pos,
-    /// we need to store the position of the captured piece in case of en passant
+
+    pub promotion: Option<PieceType>,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct UndoMove {
+    pub start_pos: Pos,
+    pub end_pos: Pos,
+
     pub captured_piece: Option<(Piece, Pos)>,
-    pub promotion: Option<Piece>,
+    pub en_passant_pos: Option<Pos>,
+
+    pub promotion: Option<PieceType>,
+
+    pub castle_availability_before_move: [bool; 4],
+}
+
+pub fn promotable_pieces() -> Vec<PieceType> {
+    vec![
+        PieceType::Queen,
+        PieceType::Rook,
+        PieceType::Bishop,
+        PieceType::Knight,
+    ]
 }

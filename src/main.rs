@@ -15,11 +15,18 @@ struct Args {
     color: Color,
 }
 
+fn print_move_list(moves: &Vec<ChessMove>) {
+    println!("valid moves: ");
+    for m in moves {
+        print!("{} ", m);
+    }
+    println!();
+}
+
 fn main() {
     let args = Args::parse();
 
-    let mut game = Game::new();
-    game.set_starting_pos();
+    let mut game = Game::new_starting_game();
 
     let stdin = io::stdin();
 
@@ -31,23 +38,26 @@ fn main() {
                 return;
             }
         };
-        game.make_move(&m);
+        game.move_piece(&m);
 
-        if let Some(winner) = game.game_winner() {
+        if let Some(winner) = game.winner {
             println!("Game over. Winner: {}", winner);
             return;
         }
-    }
 
-    println!("{}", game);
+        println!("{}", game);
+
+        let opp_valid_moves = game.all_valid_moves_for_color(args.color.opposite());
+        print_move_list(&opp_valid_moves);
+    }
 
     for line in stdin.lock().lines() {
         match line {
             Ok(line) => {
-                let opponent_move = ChessMove::from_xboard_algebraic_notation(&line, &game);
-                game.make_move(&opponent_move);
+                let opponent_move = ChessMove::from_xboard_algebraic_notation(&line);
+                game.move_piece(&opponent_move);
 
-                if let Some(winner) = game.game_winner() {
+                if let Some(winner) = game.winner {
                     println!("Game over. Winner: {}", winner);
                     return;
                 }
@@ -60,38 +70,19 @@ fn main() {
                     }
                 };
 
-                game.make_move(&m);
+                game.move_piece(&m);
 
-                if let Some(winner) = game.game_winner() {
+                if let Some(winner) = game.winner {
                     println!("Game over. Winner: {}", winner);
                     return;
                 }
 
                 println!("{}", game);
+
+                let opp_valid_moves = game.all_valid_moves_for_color(args.color.opposite());
+                print_move_list(&opp_valid_moves);
             }
             Err(error) => println!("error: {}", error),
         }
     }
-
-    //game.from_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR".to_string());
-
-    // println!("{}", game);
-
-    // let moves = game.all_valid_moves_for_color(Color::White);
-    // // println!("{:?}", moves);
-
-    // // only look at last 5 moves
-    // //let moves = moves.iter().rev().take(5).rev().collect::<Vec<_>>();
-
-    // // for some reason, when printing all possible starting moves
-    // // for white at once, the shell will chop off weird bits of the last
-    // // board. I've double checked that everything is good, and it
-    // // works fine if you print only parts of it at a time.
-    // for m in moves {
-    //     let mut game_copy = game.clone();
-    //     game_copy.make_move(&m, None);
-
-    //     println!("{}", m);
-    //     println!("{}", game_copy);
-    // }
 }

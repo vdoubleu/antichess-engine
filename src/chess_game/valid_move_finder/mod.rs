@@ -13,32 +13,26 @@ use crate::chess_game::valid_move_finder::queen_move_finder::all_valid_moves_for
 use crate::chess_game::valid_move_finder::rook_move_finder::all_valid_moves_for_rook;
 use crate::chess_game::{Game, Pos};
 
-fn move_within_board_bounds(row: i16, col: i16) -> bool {
-    // assumes board is 8x8
-    let r = 0..8;
-    r.contains(&row) && r.contains(&col)
+pub fn all_bishop_moves(game: &Game, pos: Pos) -> Vec<Pos> {
+    all_valid_moves_for_bishop(game, pos)
 }
 
-pub fn all_bishop_moves(game: &Game, pos: &Pos, no_piece_check: bool) -> Vec<Pos> {
-    all_valid_moves_for_bishop(game, pos, no_piece_check)
-}
-
-pub fn all_king_moves(game: &Game, pos: &Pos, only_check_currently_attacking: bool) -> Vec<Pos> {
+pub fn all_king_moves(game: &Game, pos: Pos, only_check_currently_attacking: bool) -> Vec<Pos> {
     all_valid_moves_for_king(game, pos, only_check_currently_attacking)
 }
 
-pub fn all_knight_moves(game: &Game, pos: &Pos) -> Vec<Pos> {
+pub fn all_knight_moves(game: &Game, pos: Pos) -> Vec<Pos> {
     all_valid_moves_for_knight(game, pos)
 }
 
-pub fn all_pawn_moves(game: &Game, pos: &Pos) -> Vec<Pos> {
-    all_valid_moves_for_pawn(game, pos)
+pub fn all_pawn_moves(game: &Game, pos: Pos, only_check_currently_attacking: bool) -> Vec<Pos> {
+    all_valid_moves_for_pawn(game, pos, only_check_currently_attacking)
 }
 
-pub fn all_queen_moves(game: &Game, pos: &Pos) -> Vec<Pos> {
+pub fn all_queen_moves(game: &Game, pos: Pos) -> Vec<Pos> {
     all_valid_moves_for_queen(game, pos)
 }
 
-pub fn all_rook_moves(game: &Game, pos: &Pos, no_piece_check: bool) -> Vec<Pos> {
-    all_valid_moves_for_rook(game, pos, no_piece_check)
+pub fn all_rook_moves(game: &Game, pos: Pos) -> Vec<Pos> {
+    all_valid_moves_for_rook(game, pos)
 }

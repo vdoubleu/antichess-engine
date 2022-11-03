@@ -1,45 +1,34 @@
-use crate::chess_game::valid_move_finder::move_within_board_bounds;
-use crate::chess_game::{Game, PieceType, Pos};
+use crate::chess_game::pos::PosExt;
+use crate::chess_game::{Game, Pos};
 
 // the no piece check should be set to false in most cases. It's only used when getting all valid
 // moves for the queen because the queen can move like a rook or a bishop
-pub fn all_valid_moves_for_rook(game: &Game, pos: &Pos, no_piece_check: bool) -> Vec<Pos> {
+pub fn all_valid_moves_for_rook(game: &Game, pos: Pos) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
 
-    let row = pos.row;
-    let col = pos.col;
-
-    let piece = match game.piece_at(row, col) {
+    let piece = match game.get_piece(pos) {
         Some(p) => p,
         None => return valid_moves,
     };
 
-    if !no_piece_check && piece.piece_type != PieceType::Rook {
-        return valid_moves;
-    }
-
     let color = piece.color;
 
-    let rook_move_directions: Vec<(i16, i16)> = vec![(1, 0), (-1, 0), (0, 1), (0, -1)];
+    let rook_move_directions: Vec<i8> = vec![1, -1, 10, -10];
 
-    for (row_dir, col_dir) in rook_move_directions {
-        let mut row = row as i16;
-        let mut col = col as i16;
+    for move_dist in rook_move_directions {
+        let mut curr_pos = pos;
 
         loop {
-            row += row_dir;
-            col += col_dir;
+            curr_pos = ((curr_pos as i8) + move_dist) as usize;
 
-            if !move_within_board_bounds(row, col) {
+            if !curr_pos.on_board() {
                 break;
             }
 
-            let m = Pos::new(row as usize, col as usize);
-
-            if game.is_empty_square(&m) {
-                valid_moves.push(m);
-            } else if game.has_piece_with_color(&m, color.opposite()) {
-                valid_moves.push(m);
+            if game.board[curr_pos].is_none() {
+                valid_moves.push(curr_pos);
+            } else if game.has_piece_with_color(curr_pos, color.opposite()) {
+                valid_moves.push(curr_pos);
                 break;
             } else {
                 break;
