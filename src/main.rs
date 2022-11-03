@@ -30,7 +30,10 @@ fn main() {
 
     let stdin = io::stdin();
 
-    if args.color == Color::White {
+    let your_color = args.color;
+    let opp_color = args.color.opposite();
+
+    if your_color == Color::White {
         let m = match generate_move(&game, Color::White) {
             Some(m) => m,
             None => {
@@ -47,7 +50,7 @@ fn main() {
 
         println!("{}", game);
 
-        let opp_valid_moves = game.all_valid_moves_for_color(args.color.opposite());
+        let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
         print_move_list(&opp_valid_moves);
     }
 
@@ -62,7 +65,7 @@ fn main() {
                     return;
                 }
 
-                let m = match generate_move(&game, Color::White) {
+                let m = match generate_move(&game, your_color) {
                     Some(m) => m,
                     None => {
                         println!("resign");
@@ -79,7 +82,7 @@ fn main() {
 
                 println!("{}", game);
 
-                let opp_valid_moves = game.all_valid_moves_for_color(args.color.opposite());
+                let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
                 print_move_list(&opp_valid_moves);
             }
             Err(error) => println!("error: {}", error),

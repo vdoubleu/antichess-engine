@@ -338,7 +338,10 @@ impl Game {
             } else if from_col == 4 && to_col == 2 {
                 (Pos::new(usize_to_row, 3), Pos::new(usize_to_row, 0))
             } else {
-                panic!("invalid king or rook move when castling");
+                println!("{}", self);
+                println!("{}", self.get_fen_notation());
+                println!("invalid move: {} {:?}", chess_move, chess_move);
+                panic!("invalid rook move when castling");
             };
 
             self.relocate_piece(rook_from_pos, rook_to_pos);
@@ -413,7 +416,10 @@ impl Game {
             } else if end_col == 2 {
                 (Pos::new(usize_end_row, 3), Pos::new(usize_end_row, 0))
             } else {
-                panic!("invalid king or rook move when castling");
+                println!("{}", self);
+                println!("{}", self.get_fen_notation());
+                println!("invalid move: {:?}", undo_move);
+                panic!("invalid rook move when uncastling");
             };
 
             self.relocate_piece(rook_move_start, rook_move_end);
