@@ -71,6 +71,8 @@ fn alpha_beta_impl(
     let mut curr_beta = beta;
 
     for move_option in all_valid_moves {
+        // println!("move: {} {} {:?}", move_option, color, move_option);
+
         game.move_piece(&move_option);
 
         let new_curr_depth = if valid_moves_len <= 3 {
@@ -123,10 +125,5 @@ mod alpha_beta_tests {
         assert!(move1.is_some());
 
         game.move_piece(&move1.unwrap());
-
-        // let move2 = alpha_beta(&game, Color::Black);
-        // assert!(move2.is_some());
-
-        // game.move_piece(&move2.unwrap());
     }
 }

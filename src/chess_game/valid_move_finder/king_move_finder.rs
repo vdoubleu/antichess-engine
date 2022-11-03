@@ -24,7 +24,7 @@ pub fn all_valid_moves_for_king(
         let new_pos = (pos as i8 + move_dist) as Pos;
 
         // check underflow
-        if !new_pos.is_on_board() {
+        if !new_pos.on_board() {
             continue;
         }
 
@@ -78,9 +78,9 @@ fn valid_king_castle(game: &Game, color: Color) -> bool {
     let king_pos = Pos::new(king_rook_row, 4);
     let rook_pos = Pos::new(king_rook_row, 7);
 
-    // if game.board[rook_pos].is_none() {
-    //     return false;
-    // }
+    if game.board[rook_pos].is_none() {
+        return false;
+    }
 
     if has_no_pieces_between(game, king_pos + 1, rook_pos - 1)
         && has_no_pieces_attacked_by_color(game, king_pos, king_pos + 2, color.opposite())
@@ -99,9 +99,9 @@ fn valid_queen_castle(game: &Game, color: Color) -> bool {
     let king_pos = Pos::new(king_rook_row, 4);
     let rook_pos = Pos::new(king_rook_row, 0);
 
-    // if game.board[rook_pos].is_none() {
-    //     return false;
-    // }
+    if game.board[rook_pos].is_none() {
+        return false;
+    }
 
     if has_no_pieces_between(game, rook_pos + 1, king_pos - 1)
         && has_no_pieces_attacked_by_color(game, king_pos - 2, king_pos, color.opposite())

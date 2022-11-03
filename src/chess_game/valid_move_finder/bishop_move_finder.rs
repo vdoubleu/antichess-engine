@@ -20,7 +20,7 @@ pub fn all_valid_moves_for_bishop(game: &Game, pos: Pos) -> Vec<Pos> {
         loop {
             curr_pos = ((curr_pos as i8) + move_dist) as usize;
 
-            if !curr_pos.is_on_board() {
+            if !curr_pos.on_board() {
                 break;
             }
 

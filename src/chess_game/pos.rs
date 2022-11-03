@@ -2,7 +2,7 @@ use crate::chess_game::Pos;
 
 pub trait PosExt {
     fn new(row: usize, col: usize) -> Self;
-    fn is_on_board(self) -> bool;
+    fn on_board(self) -> bool;
     fn from_row_col(row: usize, col: usize) -> Self;
     fn to_row_col(self) -> (usize, usize);
     fn row(self) -> usize;
@@ -20,7 +20,7 @@ impl PosExt for Pos {
         row * 10 + col + BOARD_START
     }
 
-    fn is_on_board(self) -> bool {
+    fn on_board(self) -> bool {
         self >= BOARD_START && self <= BOARD_END && self % 10 != 0 && self % 10 != 9
     }
 
@@ -81,7 +81,7 @@ mod pos_tests {
         ];
 
         for (pos, expected) in test_pos {
-            assert_eq!(pos.is_on_board(), expected);
+            assert_eq!(pos.on_board(), expected);
         }
     }
 

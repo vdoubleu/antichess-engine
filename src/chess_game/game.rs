@@ -45,6 +45,9 @@ impl Game {
             self.board[end_pos] = Some(piece);
             self.board[start_pos] = None;
         } else {
+            println!("{}", self);
+            println!("{}", self.get_fen_notation());
+            println!("start_pos: {}, end_pos: {}", start_pos, end_pos);
             panic!("No piece at start_pos {}", start_pos);
         }
 
@@ -125,7 +128,7 @@ impl Game {
 
     /// Checks if the given position on the board has a piece of the given color
     pub fn has_piece_with_color(&self, pos: Pos, color: Color) -> bool {
-        assert!(pos.is_on_board());
+        assert!(pos.on_board());
 
         match &self.get_piece(pos) {
             Some(piece) => piece.color == color,
@@ -211,7 +214,7 @@ impl Game {
 
                 for to_pos in valid_moves {
                     let to_row = to_pos.row();
-                    if piece.piece_type == PieceType::Pawn && (to_row == 1 || to_row == 7) {
+                    if piece.piece_type == PieceType::Pawn && (to_row == 0 || to_row == 7) {
                         for promo_piece in promotable_pieces() {
                             all_valid_moves.push(ChessMove::new(
                                 from_pos,
@@ -251,6 +254,9 @@ impl Game {
     pub fn move_piece(&mut self, chess_move: &ChessMove) -> &mut Self {
         // check move is valid
         if !self.move_is_valid(chess_move.start_pos, chess_move.end_pos) {
+            println!("{}", self);
+            println!("{}", self.get_fen_notation());
+            println!("invalid move: {} {:?}", chess_move, chess_move);
             panic!("Invalid move");
         }
 
@@ -307,12 +313,10 @@ impl Game {
                 } else if chess_move.start_pos == Pos::new(0, 7) {
                     self.castle_availability[CastleTypes::WhiteKing as usize] = false;
                 }
-            } else {
-                if chess_move.start_pos == Pos::new(7, 0) {
-                    self.castle_availability[CastleTypes::BlackQueen as usize] = false;
-                } else if chess_move.start_pos == Pos::new(7, 7) {
-                    self.castle_availability[CastleTypes::BlackKing as usize] = false;
-                }
+            } else if chess_move.start_pos == Pos::new(7, 0) {
+                self.castle_availability[CastleTypes::BlackQueen as usize] = false;
+            } else if chess_move.start_pos == Pos::new(7, 7) {
+                self.castle_availability[CastleTypes::BlackKing as usize] = false;
             }
         }
 
@@ -445,6 +449,12 @@ impl fmt::Display for Game {
         out_string += "  a b c d e f g h\n";
 
         write!(f, "{}", out_string)
+    }
+}
+
+impl Default for Game {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

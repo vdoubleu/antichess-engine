@@ -23,7 +23,7 @@ pub fn all_valid_moves_for_pawn(
     for move_dist in pawn_moves {
         let new_pos = (pos as i8 + move_dist) as Pos;
 
-        if !new_pos.is_on_board() {
+        if !new_pos.on_board() {
             continue;
         }
 
