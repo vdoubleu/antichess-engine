@@ -13,7 +13,7 @@ use crate::chess_game::valid_move_finder::queen_move_finder::all_valid_moves_for
 use crate::chess_game::valid_move_finder::rook_move_finder::all_valid_moves_for_rook;
 use crate::chess_game::{Game, Pos};
 
-pub fn all_bishop_moves(game: &Game, pos: Pos, no_piece_check: bool) -> Vec<Pos> {
+pub fn all_bishop_moves(game: &Game, pos: Pos) -> Vec<Pos> {
     all_valid_moves_for_bishop(game, pos)
 }
 
@@ -33,6 +33,6 @@ pub fn all_queen_moves(game: &Game, pos: Pos) -> Vec<Pos> {
     all_valid_moves_for_queen(game, pos)
 }
 
-pub fn all_rook_moves(game: &Game, pos: Pos, no_piece_check: bool) -> Vec<Pos> {
+pub fn all_rook_moves(game: &Game, pos: Pos) -> Vec<Pos> {
     all_valid_moves_for_rook(game, pos)
 }

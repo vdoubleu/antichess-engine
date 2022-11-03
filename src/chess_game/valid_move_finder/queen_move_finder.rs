@@ -5,11 +5,6 @@ use crate::chess_game::{Game, Pos};
 pub fn all_valid_moves_for_queen(game: &Game, pos: Pos) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
 
-    let piece = match game.get_piece(pos) {
-        Some(p) => p,
-        None => return valid_moves,
-    };
-
     let mut rook_moves = all_valid_moves_for_rook(game, pos);
     let mut bishop_moves = all_valid_moves_for_bishop(game, pos);
 

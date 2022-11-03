@@ -26,8 +26,7 @@ fn print_move_list(moves: &Vec<ChessMove>) {
 fn main() {
     let args = Args::parse();
 
-    let mut game = Game::new();
-    game.set_starting_pos();
+    let mut game = Game::new_starting_game();
 
     let stdin = io::stdin();
 
@@ -39,9 +38,9 @@ fn main() {
                 return;
             }
         };
-        game.make_move(&m);
+        game.move_piece(&m);
 
-        if let Some(winner) = game.game_winner() {
+        if let Some(winner) = game.winner {
             println!("Game over. Winner: {}", winner);
             return;
         }
@@ -55,10 +54,10 @@ fn main() {
     for line in stdin.lock().lines() {
         match line {
             Ok(line) => {
-                let opponent_move = ChessMove::from_xboard_algebraic_notation(&line, &game);
-                game.make_move(&opponent_move);
+                let opponent_move = ChessMove::from_xboard_algebraic_notation(&line);
+                game.move_piece(&opponent_move);
 
-                if let Some(winner) = game.game_winner() {
+                if let Some(winner) = game.winner {
                     println!("Game over. Winner: {}", winner);
                     return;
                 }
@@ -71,9 +70,9 @@ fn main() {
                     }
                 };
 
-                game.make_move(&m);
+                game.move_piece(&m);
 
-                if let Some(winner) = game.game_winner() {
+                if let Some(winner) = game.winner {
                     println!("Game over. Winner: {}", winner);
                     return;
                 }

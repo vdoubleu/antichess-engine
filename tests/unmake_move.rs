@@ -3,11 +3,10 @@ use antichess_engine::chess_game::{ChessMove, Color, Game};
 enum MoveDirection {
     Forward,
     Backward,
-    Split,
 }
 
 #[test]
-fn test_unmake_move_baisc() {
+fn test_unmove_piece_basic() {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> = vec![
@@ -22,16 +21,16 @@ fn test_unmake_move_baisc() {
         "e1g1".to_string(),
     ];
 
-    let mut move_store: Vec<ChessMove> = Vec::new();
+    let mut undo_count = 0;
 
     for m in &moves_strings {
-        let curr_move = ChessMove::from_xboard_algebraic_notation(&m, &game);
-        game.make_move(&curr_move);
-        move_store.push(curr_move);
+        let curr_move = ChessMove::from_xboard_algebraic_notation(&m);
+        game.move_piece(&curr_move);
+        undo_count += 1;
     }
 
-    for m in move_store.iter().rev() {
-        game.unmake_move(&m);
+    for _ in 0..undo_count {
+        game.unmove_move();
     }
 
     assert_eq!(
@@ -41,7 +40,7 @@ fn test_unmake_move_baisc() {
 }
 
 #[test]
-fn test_unmake_move_remake_repeat() {
+fn test_unmove_piece_remake_repeat() {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> = vec![
@@ -64,106 +63,81 @@ fn test_unmake_move_remake_repeat() {
         MoveDirection::Forward,
     ];
 
-    let mut move_store: Vec<ChessMove> = Vec::new();
-
     let mut curr_move_id = 0;
     for m in &move_order {
         match m {
             MoveDirection::Forward => {
                 let curr_move =
-                    ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
+                    ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
                 println!("Making move: {:?}", curr_move);
-                game.make_move(&curr_move);
-                move_store.push(curr_move);
+                game.move_piece(&curr_move);
                 curr_move_id += 1;
             }
             MoveDirection::Backward => {
-                let curr_move = move_store.pop().unwrap();
-                game.unmake_move(&curr_move);
+                game.unmove_move();
                 curr_move_id -= 1;
             }
-            _ => {}
         }
         println!("{} ", &game);
     }
 }
 
 #[test]
-fn test_unmake_move_remake_repeat_2() {
+fn test_unmove_piece_remake_repeat_2() {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> =
         vec!["a2a3".to_string(), "b8c6".to_string(), "a3a4".to_string()];
 
-    let mut move_store: Vec<ChessMove> = Vec::new();
     let mut curr_move_id = 0;
 
     // white moves pawn
-    let curr_move_1 =
-        ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
-    game.make_move(&curr_move_1);
-    move_store.push(curr_move_1);
+    let curr_move_1 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+    game.move_piece(&curr_move_1);
     curr_move_id += 1;
 
     // black moves knight
-    let curr_move_2 =
-        ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
-    game.make_move(&curr_move_2);
-    move_store.push(curr_move_2);
+    let curr_move_2 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+    game.move_piece(&curr_move_2);
     curr_move_id += 1;
 
     // white moves pawn
-    let curr_move_3 =
-        ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id], &game);
-    game.make_move(&curr_move_3);
-    move_store.push(curr_move_3);
-    curr_move_id += 1;
+    let curr_move_3 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+
+    game.move_piece(&curr_move_3);
 
     // white undoes pawn move
-    game.unmake_move(&curr_move_3);
+    game.unmove_move();
 
     let white_moves = game.all_valid_moves_for_color(Color::White);
 
     assert!(
         white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a4".to_string(),
-            &game
+            &"a3a4".to_string()
         ))
     );
     assert!(
         !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a5".to_string(),
-            &game
+            &"a3a5".to_string()
         ))
     );
 
     // black undoes knight move
-    game.unmake_move(&curr_move_2);
+    game.unmove_move();
 
     // black tries new knight move
-    game.make_move(&ChessMove::from_xboard_algebraic_notation(
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation(
         &"b8a6".to_string(),
-        &game,
     ));
 
     assert!(
         white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a4".to_string(),
-            &game
+            &"a3a4".to_string()
         ))
     );
     assert!(
         !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a5".to_string(),
-            &game
+            &"a3a5".to_string()
         ))
     );
-
-    //         MoveDirection::Backward => {
-    //             let curr_move = move_store.pop().unwrap();
-    //             game.unmake_move(&curr_move);
-    //             curr_move_id -= 1;
-    //         }
-    //     println!("{} ", &game);
-    // }
 }

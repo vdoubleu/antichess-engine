@@ -32,7 +32,7 @@ impl ChessMove {
     }
 
     /// Creates a ChessMove from xboard algebraic notation
-    pub fn from_xboard_algebraic_notation(s: &String, game: &Game) -> ChessMove {
+    pub fn from_xboard_algebraic_notation(s: &str) -> ChessMove {
         let start_pos = Pos::from_alg_notation(&s[0..2]);
         let end_pos = Pos::from_alg_notation(&s[2..4]);
         let promotion = if s.len() == 5 {
@@ -45,21 +45,17 @@ impl ChessMove {
     }
 
     pub fn is_en_passant(&self, game: &Game) -> bool {
-        let (to_row, to_col) = self.end_pos.to_row_col_as_i8();
-        let (from_row, from_col) = self.start_pos.to_row_col_as_i8();
-        let moving_piece = game.get_piece(self.start_pos).unwrap();
+        let to_col = self.end_pos.col() as i8;
+        let from_col = self.start_pos.col() as i8;
+        if let Some(moving_piece) = game.get_piece(self.start_pos) {
+            if moving_piece.piece_type != PieceType::Pawn {
+                return false;
+            }
+        }
 
         if let Some(en_passant_pos) = game.en_passant_pos {
-            let (_, ep_col) = en_passant_pos.to_row_col_as_i8();
-            if moving_piece.piece_type == PieceType::Pawn
-                && (to_col - from_col).abs() == 1
-                && game.board[self.end_pos].is_none()
-                && ep_col == to_col
-            {
-                true
-            } else {
-                false
-            }
+            let ep_col = en_passant_pos.col() as i8;
+            (to_col - from_col).abs() == 1 && game.board[self.end_pos].is_none() && ep_col == to_col
         } else {
             false
         }

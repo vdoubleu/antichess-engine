@@ -49,15 +49,15 @@ impl PosExt for Pos {
 
     fn from_alg_notation(alg_notation: &str) -> Self {
         let mut chars = alg_notation.chars();
-        let col = chars.next().unwrap() as usize - 'a' as usize + 1;
-        let row = chars.next().unwrap() as usize - '1' as usize + 1;
+        let col = chars.next().unwrap() as usize - 'a' as usize;
+        let row = 8 - chars.next().unwrap().to_digit(10).unwrap() as usize;
         Self::from_row_col(row, col)
     }
 
     fn to_alg_notation(self) -> String {
         let (row, col) = self.to_row_col();
-        let col = (col + 'a' as usize - 1) as u8 as char;
-        let row = (row + '1' as usize - 1) as u8 as char;
+        let col = (col + ('a' as usize)) as u8 as char;
+        let row: char = char::from_digit(7 - (row as u32) + 1, 10).unwrap();
         format!("{}{}", col, row)
     }
 }
@@ -94,9 +94,9 @@ mod pos_tests {
             ((1, 0), 31),
             ((1, 1), 32),
             ((1, 7), 38),
-            ((7, 0), 81),
-            ((7, 1), 82),
-            ((7, 7), 88),
+            ((7, 0), 91),
+            ((7, 1), 92),
+            ((7, 7), 98),
         ];
 
         for ((row, col), expected) in test_pos {
@@ -108,12 +108,12 @@ mod pos_tests {
     #[test]
     fn test_to_from_alg_notation() {
         let test_pos: Vec<(&str, Pos)> = vec![
-            ("a1", 21),
-            ("a2", 31),
-            ("a8", 81),
-            ("h1", 28),
-            ("h2", 38),
-            ("h8", 88),
+            ("a1", 91),
+            ("a2", 81),
+            ("a8", 21),
+            ("h1", 98),
+            ("h2", 88),
+            ("h8", 28),
         ];
 
         for (alg_notation, expected) in test_pos {

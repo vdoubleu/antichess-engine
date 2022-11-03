@@ -18,11 +18,11 @@ mod random_move_tests {
         let move_1 = random_move(&game, Color::White);
         assert!(move_1.is_some());
 
-        game.make_move(&move_1.unwrap());
+        game.move_piece(&move_1.unwrap());
 
         let move_2 = random_move(&game, Color::Black);
         assert!(move_2.is_some());
 
-        game.make_move(&move_2.unwrap());
+        game.move_piece(&move_2.unwrap());
     }
 }

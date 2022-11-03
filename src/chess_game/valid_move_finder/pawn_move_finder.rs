@@ -53,11 +53,11 @@ pub fn all_valid_moves_for_pawn(
         if move_dist.abs() == 20 {
             // check if on starting row
             let starting_row = match color {
-                Color::White => 1,
-                Color::Black => 6,
+                Color::White => 6,
+                Color::Black => 1,
             };
 
-            if new_pos.row() != starting_row {
+            if pos.row() != starting_row {
                 // not on starting row, we cannot move two squares forward
                 continue;
             }
@@ -76,8 +76,6 @@ pub fn all_valid_moves_for_pawn(
 }
 
 fn is_en_passant(game: &Game, pawn_curr_pos: Pos, move_pos: Pos) -> bool {
-    let en_passant_pawn_pos = Pos::new(pawn_curr_pos.row(), move_pos.col());
-
     if game.en_passant_pos.is_none() {
         return false;
     }
@@ -104,7 +102,7 @@ mod pawn_tests {
         let game = Game::from_fen_notation("8/5p2/4P1P1/8/8/8/8/8");
         let pos = Pos::new(1, 5);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, pos);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
         let expected_moves = vec![
             Pos::new(2, 5),
             Pos::new(3, 5),
@@ -121,7 +119,7 @@ mod pawn_tests {
         let game = Game::from_fen_notation("8/8/8/8/8/4p1p1/5P2/8");
         let pos = Pos::new(6, 5);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, pos);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
         let expected_moves = vec![
             Pos::new(5, 5),
             Pos::new(4, 5),
@@ -130,6 +128,19 @@ mod pawn_tests {
         ];
 
         println!("{:?}", valid_moves);
+        assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
+    }
+
+    #[test]
+    fn test_starting_double_move() {
+        let game = Game::from_fen_notation("8/8/8/8/8/8/4P3/8");
+        let pos = Pos::new(6, 4);
+
+        let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
+        let expected_moves = vec![Pos::new(5, 4), Pos::new(4, 4)];
+
+        println!("{:?}", valid_moves);
+        assert_eq!(valid_moves.len(), 2);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
     }
 }

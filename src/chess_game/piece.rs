@@ -53,3 +53,98 @@ impl PieceType {
         }
     }
 }
+
+#[cfg(test)]
+mod piece_tests {
+    use super::*;
+
+    #[test]
+    fn test_from_char() {
+        let piece = Piece::from_char('P');
+        assert_eq!(piece.piece_type, PieceType::Pawn);
+        assert_eq!(piece.color, Color::White);
+
+        let piece = Piece::from_char('p');
+        assert_eq!(piece.piece_type, PieceType::Pawn);
+        assert_eq!(piece.color, Color::Black);
+
+        let piece = Piece::from_char('R');
+        assert_eq!(piece.piece_type, PieceType::Rook);
+        assert_eq!(piece.color, Color::White);
+
+        let piece = Piece::from_char('r');
+        assert_eq!(piece.piece_type, PieceType::Rook);
+        assert_eq!(piece.color, Color::Black);
+
+        let piece = Piece::from_char('N');
+        assert_eq!(piece.piece_type, PieceType::Knight);
+        assert_eq!(piece.color, Color::White);
+
+        let piece = Piece::from_char('n');
+        assert_eq!(piece.piece_type, PieceType::Knight);
+        assert_eq!(piece.color, Color::Black);
+
+        let piece = Piece::from_char('B');
+        assert_eq!(piece.piece_type, PieceType::Bishop);
+        assert_eq!(piece.color, Color::White);
+
+        let piece = Piece::from_char('b');
+        assert_eq!(piece.piece_type, PieceType::Bishop);
+        assert_eq!(piece.color, Color::Black);
+
+        let piece = Piece::from_char('Q');
+        assert_eq!(piece.piece_type, PieceType::Queen);
+        assert_eq!(piece.color, Color::White);
+
+        let piece = Piece::from_char('q');
+        assert_eq!(piece.piece_type, PieceType::Queen);
+        assert_eq!(piece.color, Color::Black);
+
+        let piece = Piece::from_char('K');
+        assert_eq!(piece.piece_type, PieceType::King);
+        assert_eq!(piece.color, Color::White);
+
+        let piece = Piece::from_char('k');
+        assert_eq!(piece.piece_type, PieceType::King);
+        assert_eq!(piece.color, Color::Black);
+    }
+
+    #[test]
+    fn test_char_notation() {
+        let piece = Piece::new(PieceType::Pawn, Color::White);
+        assert_eq!(piece.char_notation(), 'P');
+
+        let piece = Piece::new(PieceType::Pawn, Color::Black);
+        assert_eq!(piece.char_notation(), 'p');
+
+        let piece = Piece::new(PieceType::Rook, Color::White);
+        assert_eq!(piece.char_notation(), 'R');
+
+        let piece = Piece::new(PieceType::Rook, Color::Black);
+        assert_eq!(piece.char_notation(), 'r');
+
+        let piece = Piece::new(PieceType::Knight, Color::White);
+        assert_eq!(piece.char_notation(), 'N');
+
+        let piece = Piece::new(PieceType::Knight, Color::Black);
+        assert_eq!(piece.char_notation(), 'n');
+
+        let piece = Piece::new(PieceType::Bishop, Color::White);
+        assert_eq!(piece.char_notation(), 'B');
+
+        let piece = Piece::new(PieceType::Bishop, Color::Black);
+        assert_eq!(piece.char_notation(), 'b');
+
+        let piece = Piece::new(PieceType::Queen, Color::White);
+        assert_eq!(piece.char_notation(), 'Q');
+
+        let piece = Piece::new(PieceType::Queen, Color::Black);
+        assert_eq!(piece.char_notation(), 'q');
+
+        let piece = Piece::new(PieceType::King, Color::White);
+        assert_eq!(piece.char_notation(), 'K');
+
+        let piece = Piece::new(PieceType::King, Color::Black);
+        assert_eq!(piece.char_notation(), 'k');
+    }
+}

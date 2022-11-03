@@ -18,7 +18,7 @@ pub fn all_valid_moves_for_king(
 
     let king_move_options: Vec<i8> = vec![1, -1, 9, -9, 10, -10, 11, -11];
 
-    let (check_queen_castle, check_king_castle) = (false, false);
+    let (mut check_queen_castle, mut check_king_castle) = (false, false);
 
     for move_dist in king_move_options {
         let new_pos = (pos as i8 + move_dist) as Pos;
@@ -52,7 +52,7 @@ pub fn all_valid_moves_for_king(
         };
 
         if game.castle_availability[queen_castle_type as usize] && valid_queen_castle(game, color) {
-            valid_moves.push(pos + 2);
+            valid_moves.push(pos - 2);
         }
     }
 
@@ -63,7 +63,7 @@ pub fn all_valid_moves_for_king(
         };
 
         if game.castle_availability[king_castle_type as usize] && valid_king_castle(game, color) {
-            valid_moves.push(pos - 2);
+            valid_moves.push(pos + 2);
         }
     }
 
@@ -75,10 +75,14 @@ fn valid_king_castle(game: &Game, color: Color) -> bool {
         Color::White => 7,
         Color::Black => 0,
     };
-    let king_pos = Pos::new(king_rook_row, 4) + 1;
-    let rook_pos = Pos::new(king_rook_row, 7) - 1;
+    let king_pos = Pos::new(king_rook_row, 4);
+    let rook_pos = Pos::new(king_rook_row, 7);
 
-    if has_no_pieces_between(game, king_pos, rook_pos)
+    // if game.board[rook_pos].is_none() {
+    //     return false;
+    // }
+
+    if has_no_pieces_between(game, king_pos + 1, rook_pos - 1)
         && has_no_pieces_attacked_by_color(game, king_pos, king_pos + 2, color.opposite())
     {
         return true;
@@ -92,10 +96,14 @@ fn valid_queen_castle(game: &Game, color: Color) -> bool {
         Color::White => 7,
         Color::Black => 0,
     };
-    let king_pos = Pos::new(king_rook_row, 4) - 1;
-    let rook_pos = Pos::new(king_rook_row, 7) + 1;
+    let king_pos = Pos::new(king_rook_row, 4);
+    let rook_pos = Pos::new(king_rook_row, 0);
 
-    if has_no_pieces_between(game, rook_pos, king_pos)
+    // if game.board[rook_pos].is_none() {
+    //     return false;
+    // }
+
+    if has_no_pieces_between(game, rook_pos + 1, king_pos - 1)
         && has_no_pieces_attacked_by_color(game, king_pos - 2, king_pos, color.opposite())
     {
         return true;
@@ -135,7 +143,9 @@ mod test_king {
 
     #[test]
     fn test_king_move() {
-        let game = Game::from_fen_notation("8/8/8/8/3k4/8/8/8");
+        let mut game = Game::from_fen_notation("8/8/8/8/3k4/8/8/8");
+        game.castle_availability = [false; 4];
+
         let king_pos = Pos::from_alg_notation("d4");
 
         let valid_moves = all_valid_moves_for_king(&game, king_pos, false);

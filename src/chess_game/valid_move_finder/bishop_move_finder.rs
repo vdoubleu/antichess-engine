@@ -13,7 +13,7 @@ pub fn all_valid_moves_for_bishop(game: &Game, pos: Pos) -> Vec<Pos> {
 
     let color = piece.color;
 
-    let bishop_move_directions: Vec<i8> = vec![9, 7, -9, -7];
+    let bishop_move_directions: Vec<i8> = vec![9, 11, -9, -11];
 
     for move_dist in bishop_move_directions {
         let mut curr_pos = pos;

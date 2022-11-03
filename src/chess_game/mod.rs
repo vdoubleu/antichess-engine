@@ -15,6 +15,10 @@ pub struct Game {
     pub turn_counter: i64,
     pub castle_availability: [bool; 4],
     pub en_passant_pos: Option<Pos>,
+
+    pub winner: Option<Color>,
+
+    pub undo_move_history: Vec<UndoMove>,
 }
 
 pub enum CastleTypes {
@@ -24,7 +28,7 @@ pub enum CastleTypes {
     BlackQueen = 3,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: Color,
@@ -67,9 +71,11 @@ pub struct UndoMove {
     pub castle_availability_before_move: [bool; 4],
 }
 
-static PROMOTABLE_PIECES: Vec<PieceType> = vec![
-    PieceType::Queen,
-    PieceType::Rook,
-    PieceType::Bishop,
-    PieceType::Knight,
-];
+pub fn promotable_pieces() -> Vec<PieceType> {
+    vec![
+        PieceType::Queen,
+        PieceType::Rook,
+        PieceType::Bishop,
+        PieceType::Knight,
+    ]
+}
