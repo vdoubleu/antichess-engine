@@ -9,6 +9,16 @@ impl ChessMove {
             start_pos,
             end_pos,
             promotion,
+            is_null_move: false,
+        }
+    }
+
+    pub fn new_null_move() -> ChessMove {
+        ChessMove {
+            start_pos: 0,
+            end_pos: 0,
+            promotion: None,
+            is_null_move: true,
         }
     }
 

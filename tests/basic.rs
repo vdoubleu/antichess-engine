@@ -93,3 +93,13 @@ fn test_pawn_promotion() {
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(game.get_fen_notation(), "7Q/8/8/8/8/8/8/8");
 }
+
+#[test]
+fn test_pawn_promotion_while_take() {
+    let mut game = Game::from_fen_notation("6n1/7P/8/8/8/8/8/8");
+
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r"));
+
+    assert_eq!(game.player_turn, Color::Black);
+    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8");
+}
