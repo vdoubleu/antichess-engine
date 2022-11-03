@@ -1,13 +1,24 @@
+import argparse
 import subprocess
 from re import search
+
+parser = argparse.ArgumentParser(description='Run a match between two bots.')
+parser.add_argument("--white",
+                     type=str,
+                     help="path to executable for bot to play White",
+                     default="./target/release/antichess-engine.exe")
+parser.add_argument("--black",
+                     type=str,
+                     help="path to executable for bot to play Black",
+                     default="./target/release/antichess-engine.exe")
 
 def is_game_over(line):
   return search("^(Game over.|No moves available|error:)", line)
 
 if __name__ == "__main__":
-  # TODO: also make it possible to specify as arguments
-  engine_white_executable = "./target/release/antichess-engine.exe"
-  engine_black_executable = "./target/release/antichess-engine.exe"
+  args = parser.parse_args()
+  engine_white_executable = args.white
+  engine_black_executable = args.black
 
   engine_white = subprocess.Popen(
     [engine_white_executable, "white"],
