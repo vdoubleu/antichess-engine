@@ -4,8 +4,8 @@ use crate::engine::evaluate_game::evaluate;
 /// Implements the min max algorithm (without alpha beta pruning for now) to decide the best move
 /// to play. White is maximizing, black is minimizing.
 pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
-    let max_depth = 16;
-    let reasonable_depth = 8;
+    let max_depth = 2;
+    let reasonable_depth = 2;
 
     let mut best_move = None;
 
@@ -26,7 +26,7 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
 
     let mut ind = 1;
     for chess_move in all_valid_moves {
-        println!("Trying move {} of {}", ind, valid_moves_len);
+        eprintln!("Trying move {} of {}", ind, valid_moves_len);
         new_game.move_piece(&chess_move);
 
         let score = alpha_beta_impl(

@@ -18,9 +18,9 @@ struct Args {
 fn print_move_list(moves: &Vec<ChessMove>) {
     println!("valid moves: ");
     for m in moves {
-        print!("{} ", m);
+        eprint!("{} ", m);
     }
-    println!();
+    eprintln!();
 }
 
 fn main() {
@@ -35,7 +35,10 @@ fn main() {
 
     if your_color == Color::White {
         let m = match generate_move(&game, Color::White) {
-            Some(m) => m,
+            Some(m) => {
+                println!("{}", m);
+                m
+            },
             None => {
                 println!("No moves available");
                 return;
@@ -48,10 +51,10 @@ fn main() {
             return;
         }
 
-        println!("{}", game);
+        eprintln!("{}", game);
 
-        let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-        print_move_list(&opp_valid_moves);
+        // let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+        // print_move_list(&opp_valid_moves);
     }
 
     for line in stdin.lock().lines() {
@@ -66,7 +69,10 @@ fn main() {
                 }
 
                 let m = match generate_move(&game, your_color) {
-                    Some(m) => m,
+                    Some(m) => {
+                        println!("{}", m);
+                        m
+                    },
                     None => {
                         println!("resign");
                         return;
@@ -80,10 +86,10 @@ fn main() {
                     return;
                 }
 
-                println!("{}", game);
+                eprintln!("{}", game);
 
-                let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-                print_move_list(&opp_valid_moves);
+                // let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+                // print_move_list(&opp_valid_moves);
             }
             Err(error) => println!("error: {}", error),
         }
