@@ -252,6 +252,16 @@ impl Game {
 
     // moves a piece from one position to another
     pub fn move_piece(&mut self, chess_move: &ChessMove) -> &mut Self {
+        if chess_move.is_null_move {
+            self.player_turn = self.player_turn.opposite();
+            self.turn_counter += 1;
+
+            let move_undoer = UndoMove::new(self, chess_move);
+            self.undo_move_history.push(move_undoer);
+
+            return self;
+        }
+
         // check move is valid
         if !self.move_is_valid(chess_move.start_pos, chess_move.end_pos) {
             println!("{}", self);
@@ -367,6 +377,10 @@ impl Game {
         self.en_passant_pos = undo_move.en_passant_pos;
         self.castle_availability = undo_move.castle_availability_before_move;
 
+        if undo_move.is_null_move {
+            return true;
+        }
+
         if self.board[undo_move.end_pos].is_none() {
             println!("undoing a move that didn't move a piece");
             println!("undo_move: {:?}", undo_move);
@@ -383,7 +397,7 @@ impl Game {
 
         // unpromote piece
         if undo_move.promotion.is_some() {
-            self.board[undo_move.start_pos].unwrap().piece_type = PieceType::Pawn;
+            self.board[undo_move.start_pos] = Some(Piece::new(PieceType::Pawn, self.player_turn));
         }
 
         // untake piece

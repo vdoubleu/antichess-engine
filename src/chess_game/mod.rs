@@ -56,6 +56,7 @@ pub struct ChessMove {
     pub end_pos: Pos,
 
     pub promotion: Option<PieceType>,
+    pub is_null_move: bool,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -69,6 +70,8 @@ pub struct UndoMove {
     pub promotion: Option<PieceType>,
 
     pub castle_availability_before_move: [bool; 4],
+
+    pub is_null_move: bool,
 }
 
 pub fn promotable_pieces() -> Vec<PieceType> {

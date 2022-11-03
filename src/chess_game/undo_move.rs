@@ -3,6 +3,18 @@ use crate::chess_game::{ChessMove, Game, Piece, Pos, UndoMove};
 
 impl UndoMove {
     pub fn new(game: &Game, chess_move: &ChessMove) -> Self {
+        if chess_move.is_null_move {
+            return UndoMove {
+                start_pos: chess_move.start_pos,
+                end_pos: chess_move.end_pos,
+                captured_piece: None,
+                en_passant_pos: game.en_passant_pos,
+                promotion: None,
+                castle_availability_before_move: game.castle_availability,
+                is_null_move: true,
+            };
+        }
+
         let captured_piece: Option<(Piece, Pos)> =
             if chess_move.is_en_passant(game) && game.board[chess_move.end_pos].is_none() {
                 let (_, to_col) = chess_move.end_pos.to_row_col();
@@ -24,6 +36,8 @@ impl UndoMove {
             promotion: chess_move.promotion,
 
             castle_availability_before_move: game.castle_availability,
+
+            is_null_move: false,
         }
     }
 }
