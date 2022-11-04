@@ -16,7 +16,7 @@ struct Args {
 }
 
 fn print_move_list(moves: &Vec<ChessMove>) {
-    println!("valid moves: ");
+    eprintln!("valid moves: ");
     for m in moves {
         eprint!("{} ", m);
     }
@@ -53,8 +53,8 @@ fn main() {
 
         eprintln!("{}", game);
 
-        // let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-        // print_move_list(&opp_valid_moves);
+        let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+        print_move_list(&opp_valid_moves);
     }
 
     for line in stdin.lock().lines() {
@@ -88,8 +88,8 @@ fn main() {
 
                 eprintln!("{}", game);
 
-                // let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-                // print_move_list(&opp_valid_moves);
+                let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+                print_move_list(&opp_valid_moves);
             }
             Err(error) => println!("error: {}", error),
         }
