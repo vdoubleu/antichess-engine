@@ -45,9 +45,9 @@ impl Game {
             self.board[end_pos] = Some(piece);
             self.board[start_pos] = None;
         } else {
-            println!("{}", self);
-            println!("{}", self.get_fen_notation());
-            println!("start_pos: {}, end_pos: {}", start_pos, end_pos);
+            eprintln!("{}", self);
+            eprintln!("{}", self.get_fen_notation());
+            eprintln!("start_pos: {}, end_pos: {}", start_pos, end_pos);
             panic!("No piece at start_pos {}", start_pos);
         }
 
@@ -243,7 +243,7 @@ impl Game {
                     }
                 }
             } else {
-                println!("moving an opponents piece");
+                eprintln!("moving an opponents piece");
             }
         }
 
@@ -264,9 +264,9 @@ impl Game {
 
         // check move is valid
         if !self.move_is_valid(chess_move.start_pos, chess_move.end_pos) {
-            println!("{}", self);
-            println!("{}", self.get_fen_notation());
-            println!("invalid move: {} {:?}", chess_move, chess_move);
+            eprintln!("{}", self);
+            eprintln!("{}", self.get_fen_notation());
+            eprintln!("invalid move: {} {:?}", chess_move, chess_move);
             panic!("Invalid move");
         }
 
@@ -338,9 +338,9 @@ impl Game {
             } else if from_col == 4 && to_col == 2 {
                 (Pos::new(usize_to_row, 3), Pos::new(usize_to_row, 0))
             } else {
-                println!("{}", self);
-                println!("{}", self.get_fen_notation());
-                println!("invalid move: {} {:?}", chess_move, chess_move);
+                eprintln!("{}", self);
+                eprintln!("{}", self.get_fen_notation());
+                eprintln!("invalid move: {} {:?}", chess_move, chess_move);
                 panic!("invalid rook move when castling");
             };
 
@@ -385,9 +385,9 @@ impl Game {
         }
 
         if self.board[undo_move.end_pos].is_none() {
-            println!("undoing a move that didn't move a piece");
-            println!("undo_move: {:?}", undo_move);
-            println!("self: {}", self);
+            eprintln!("undoing a move that didn't move a piece");
+            eprintln!("undo_move: {:?}", undo_move);
+            eprintln!("self: {}", self);
             return false;
         }
 
@@ -416,9 +416,9 @@ impl Game {
             } else if end_col == 2 {
                 (Pos::new(usize_end_row, 3), Pos::new(usize_end_row, 0))
             } else {
-                println!("{}", self);
-                println!("{}", self.get_fen_notation());
-                println!("invalid move: {:?}", undo_move);
+                eprintln!("{}", self);
+                eprintln!("{}", self.get_fen_notation());
+                eprintln!("invalid move: {:?}", undo_move);
                 panic!("invalid rook move when uncastling");
             };
 

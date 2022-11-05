@@ -78,7 +78,7 @@ fn test_unmove_piece_remake_repeat() {
                 curr_move_id -= 1;
             }
         }
-        println!("{} ", &game);
+        eprintln!("{} ", &game);
     }
 }
 

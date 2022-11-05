@@ -26,7 +26,7 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
 
     let mut ind = 1;
     for chess_move in all_valid_moves {
-        println!("Trying move {} of {}", ind, valid_moves_len);
+        eprintln!("Trying move {} of {}", ind, valid_moves_len);
         new_game.move_piece(&chess_move);
 
         let score = alpha_beta_impl(
@@ -41,8 +41,8 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
 
         new_game.unmove_move();
 
-        if (color == Color::White && score > best_score)
-            || (color == Color::Black && score < best_score)
+        if (color == Color::White && score >= best_score)
+            || (color == Color::Black && score <= best_score)
         {
             best_score = score;
             best_move = Some(chess_move);
