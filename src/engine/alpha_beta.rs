@@ -5,15 +5,11 @@ use crate::engine::evaluate_game::evaluate;
 /// to play. White is maximizing, black is minimizing.
 pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
     let max_depth = 16;
-    let reasonable_depth = 8;
+    let reasonable_depth = 4;
 
     let mut best_move = None;
 
-    let mut best_score = if color == Color::White {
-        f64::NEG_INFINITY
-    } else {
-        f64::INFINITY
-    };
+    let mut best_score = f64::NEG_INFINITY;
 
     let all_valid_moves = game.all_valid_moves_for_color(color);
     let valid_moves_len = all_valid_moves.len();
@@ -29,9 +25,8 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
         println!("Trying move {} of {}", ind, valid_moves_len);
         new_game.move_piece(&chess_move);
 
-        let score = alpha_beta_impl(
+        let eval = -alpha_beta_impl(
             &mut new_game,
-            color.opposite(),
             f64::NEG_INFINITY,
             f64::INFINITY,
             reasonable_depth + (ind % 2),
@@ -41,10 +36,8 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
 
         new_game.unmove_move();
 
-        if (color == Color::White && score > best_score)
-            || (color == Color::Black && score < best_score)
-        {
-            best_score = score;
+        if eval > best_score {
+            best_score = eval;
             best_move = Some(chess_move);
         }
 
@@ -56,7 +49,6 @@ pub fn alpha_beta(game: &Game, color: Color) -> Option<ChessMove> {
 
 fn alpha_beta_impl(
     game: &mut Game,
-    color: Color,
     alpha: f64,
     beta: f64,
     curr_depth: i32,
@@ -64,22 +56,24 @@ fn alpha_beta_impl(
     do_null: bool,
 ) -> f64 {
     if curr_depth <= 0 || max_depth <= 0 {
-        return evaluate(game);
+        let pov = if game.player_turn == Color::White {
+            1.0
+        } else {
+            -1.0
+        };
+
+        return pov * evaluate(game);
     }
 
-    let mut best_eval: f64 = f64::NEG_INFINITY;
-    if color == Color::Black {
-        best_eval = f64::INFINITY;
-    }
+    let mut score = f64::NEG_INFINITY;
 
     // do null move pruning if we are at a reasonable depth
     // and the game is not over
     if do_null && game.turn_counter > 0 && curr_depth >= 4 {
         game.move_piece(&ChessMove::new_null_move());
 
-        let eval = alpha_beta_impl(
+        let eval = -alpha_beta_impl(
             game,
-            color.opposite(),
             -beta,
             -beta + 1.0,
             curr_depth - 4,
@@ -94,16 +88,15 @@ fn alpha_beta_impl(
         }
     }
 
-    let all_valid_moves = game.all_valid_moves_for_color(color);
+    let all_valid_moves = game.all_valid_moves_for_color(game.player_turn);
     let valid_moves_len = all_valid_moves.len();
 
     let mut curr_alpha = alpha;
-    let mut curr_beta = beta;
 
     let new_curr_depth = if valid_moves_len <= 3 {
         curr_depth
     } else {
-        curr_depth - 2
+        curr_depth - 1
     };
 
     for move_option in all_valid_moves {
@@ -111,20 +104,10 @@ fn alpha_beta_impl(
 
         game.move_piece(&move_option);
 
-        if let Some(winner) = game.winner {
-            game.unmove_move();
-            if winner == Color::White {
-                return f64::INFINITY;
-            } else {
-                return f64::NEG_INFINITY;
-            }
-        }
-
-        let eval = alpha_beta_impl(
+        let eval = -alpha_beta_impl(
             game,
-            color.opposite(),
-            curr_alpha,
-            curr_beta,
+            -beta,
+            -curr_alpha,
             new_curr_depth,
             max_depth - 1,
             true,
@@ -132,24 +115,19 @@ fn alpha_beta_impl(
 
         game.unmove_move();
 
-        if color == Color::White {
-            best_eval = eval.max(best_eval);
-            curr_alpha = curr_alpha.max(eval);
+        if eval >= score {
+            score = eval;
 
-            if beta <= alpha {
-                break;
-            }
-        } else {
-            best_eval = eval.min(best_eval);
-            curr_beta = curr_beta.min(eval);
-
-            if beta <= alpha {
-                break;
+            if eval > curr_alpha {
+                if eval >= beta {
+                    return beta;
+                }
+                curr_alpha = eval;
             }
         }
     }
 
-    best_eval
+    score
 }
 
 #[cfg(test)]
@@ -165,5 +143,30 @@ mod alpha_beta_tests {
         assert!(move1.is_some());
 
         game.move_piece(&move1.unwrap());
+    }
+
+    #[test]
+    fn white_makes_better_move() {
+        let game = Game::from_fen_notation("7k/8/8/3q1n2/4P3/8/8/7K");
+
+        let move1_option = alpha_beta(&game, Color::White);
+        assert!(move1_option.is_some());
+
+        let move1 = move1_option.unwrap();
+
+        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e4d5"));
+    }
+
+    #[test]
+    fn black_makes_better_move() {
+        let mut game = Game::from_fen_notation("7k/8/4p3/3Q1N2/8/8/1P6/7K");
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b2b4"));
+
+        let move1_option = alpha_beta(&game, Color::Black);
+        assert!(move1_option.is_some());
+
+        let move1 = move1_option.unwrap();
+
+        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e6d5"));
     }
 }

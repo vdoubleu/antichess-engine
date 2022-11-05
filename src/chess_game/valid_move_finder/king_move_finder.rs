@@ -43,6 +43,10 @@ pub fn all_valid_moves_for_king(
         return valid_moves;
     }
 
+    if pos.col() != 4 {
+        return valid_moves;
+    }
+
     // castling
 
     if check_queen_castle {
