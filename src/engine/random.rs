@@ -1,6 +1,7 @@
 use crate::chess_game::{ChessMove, Color, Game};
 use rand::prelude::SliceRandom;
 
+#[allow(dead_code)]
 pub fn random_move(game: &Game, color: Color) -> Option<ChessMove> {
     let all_valid_moves = game.all_valid_moves_for_color(color);
     let mut rng = rand::thread_rng();

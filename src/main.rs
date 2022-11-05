@@ -38,7 +38,7 @@ fn main() {
             Some(m) => {
                 println!("{}", m);
                 m
-            },
+            }
             None => {
                 println!("No moves available");
                 return;
@@ -72,7 +72,7 @@ fn main() {
                     Some(m) => {
                         println!("{}", m);
                         m
-                    },
+                    }
                     None => {
                         println!("resign");
                         return;
