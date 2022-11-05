@@ -110,7 +110,7 @@ mod pawn_tests {
             Pos::new(2, 6),
         ];
 
-        println!("{:?}", valid_moves);
+        eprintln!("{:?}", valid_moves);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
     }
 
@@ -127,7 +127,7 @@ mod pawn_tests {
             Pos::new(5, 6),
         ];
 
-        println!("{:?}", valid_moves);
+        eprintln!("{:?}", valid_moves);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
     }
 
@@ -139,7 +139,7 @@ mod pawn_tests {
         let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
         let expected_moves = vec![Pos::new(5, 4), Pos::new(4, 4)];
 
-        println!("{:?}", valid_moves);
+        eprintln!("{:?}", valid_moves);
         assert_eq!(valid_moves.len(), 2);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
     }
