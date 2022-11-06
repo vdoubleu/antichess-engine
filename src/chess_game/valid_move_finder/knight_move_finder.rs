@@ -1,16 +1,9 @@
-use crate::chess_game::{Game, Pos};
+use crate::chess_game::{Color, Game, Pos};
 
 use crate::chess_game::pos::PosExt;
 
-pub fn all_valid_moves_for_knight(game: &Game, pos: Pos) -> Vec<Pos> {
+pub fn all_valid_moves_for_knight(game: &Game, pos: Pos, color: Color) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
-
-    let piece = match game.get_piece(pos) {
-        Some(p) => p,
-        None => return valid_moves,
-    };
-
-    let color = piece.color;
 
     let moves: Vec<i8> = vec![12, 21, 19, 8, -12, -21, -19, -8];
 
@@ -38,7 +31,7 @@ mod knight_tests {
         let game = Game::from_fen_notation("8/8/8/8/3N4/8/8/8");
         let knight_pos = Pos::from_alg_notation("d4");
 
-        let valid_moves = all_valid_moves_for_knight(&game, knight_pos);
+        let valid_moves = all_valid_moves_for_knight(&game, knight_pos, Color::White);
 
         assert_eq!(valid_moves.len(), 8);
 

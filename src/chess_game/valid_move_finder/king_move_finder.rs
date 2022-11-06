@@ -1,20 +1,14 @@
-use crate::chess_game::{CastleTypes, Color, Game, Pos};
+use crate::chess_game::{CastleTypes, Color, Game, PieceType, Pos};
 
 use crate::chess_game::pos::PosExt;
 
 pub fn all_valid_moves_for_king(
     game: &Game,
     pos: Pos,
+    color: Color,
     only_check_currently_attacking: bool,
 ) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
-
-    let piece = match game.get_piece(pos) {
-        Some(p) => p,
-        None => return valid_moves,
-    };
-
-    let color = piece.color;
 
     let king_move_options: Vec<i8> = vec![1, -1, 9, -9, 10, -10, 11, -11];
 
@@ -82,7 +76,11 @@ fn valid_king_castle(game: &Game, color: Color) -> bool {
     let king_pos = Pos::new(king_rook_row, 4);
     let rook_pos = Pos::new(king_rook_row, 7);
 
-    if game.board[rook_pos].is_none() {
+    if let Some(maybe_rook) = game.get_piece(rook_pos) {
+        if maybe_rook.piece_type != PieceType::Rook || maybe_rook.color != color {
+            return false;
+        }
+    } else {
         return false;
     }
 
@@ -103,7 +101,11 @@ fn valid_queen_castle(game: &Game, color: Color) -> bool {
     let king_pos = Pos::new(king_rook_row, 4);
     let rook_pos = Pos::new(king_rook_row, 0);
 
-    if game.board[rook_pos].is_none() {
+    if let Some(maybe_rook) = game.get_piece(rook_pos) {
+        if maybe_rook.piece_type != PieceType::Rook || maybe_rook.color != color {
+            return false;
+        }
+    } else {
         return false;
     }
 
@@ -152,7 +154,7 @@ mod test_king {
 
         let king_pos = Pos::from_alg_notation("d4");
 
-        let valid_moves = all_valid_moves_for_king(&game, king_pos, false);
+        let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
 
         assert_eq!(valid_moves.len(), 8);
     }
@@ -162,7 +164,7 @@ mod test_king {
         let game = Game::from_fen_notation("r3k2r/8/8/8/8/8/8/8");
         let king_pos = Pos::from_alg_notation("e8");
 
-        let valid_moves = all_valid_moves_for_king(&game, king_pos, false);
+        let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
 
         assert_eq!(valid_moves.len(), 7);
         assert!(valid_moves.contains(&Pos::from_alg_notation("c8")));
@@ -174,7 +176,7 @@ mod test_king {
         let game = Game::from_fen_notation("rn2k1nr/8/8/8/8/8/8/8");
         let king_pos = Pos::from_alg_notation("e8");
 
-        let valid_moves = all_valid_moves_for_king(&game, king_pos, false);
+        let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
 
         assert_eq!(valid_moves.len(), 5);
         assert!(!valid_moves.contains(&Pos::from_alg_notation("c8")));
@@ -186,7 +188,7 @@ mod test_king {
         let game = Game::from_fen_notation("r3k2r/8/2B5/8/8/8/8/8");
         let king_pos = Pos::from_alg_notation("e8");
 
-        let valid_moves = all_valid_moves_for_king(&game, king_pos, false);
+        let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
 
         assert_eq!(valid_moves.len(), 5);
         assert!(!valid_moves.contains(&Pos::from_alg_notation("c8")));
@@ -198,7 +200,7 @@ mod test_king {
         let game = Game::from_fen_notation("r3k2r/8/8/8/2B2B2/8/8/8");
         let king_pos = Pos::from_alg_notation("e8");
 
-        let valid_moves = all_valid_moves_for_king(&game, king_pos, false);
+        let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
 
         assert_eq!(valid_moves.len(), 6);
         assert!(valid_moves.contains(&Pos::from_alg_notation("c8")));

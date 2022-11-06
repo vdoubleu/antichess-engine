@@ -159,13 +159,18 @@ impl Game {
         only_check_currently_attacking: bool,
     ) -> Vec<Pos> {
         if let Some(piece) = self.get_piece(pos) {
+            let piece_color = piece.color;
             match piece.piece_type {
-                PieceType::Pawn => all_pawn_moves(self, pos, only_check_currently_attacking),
-                PieceType::Knight => all_knight_moves(self, pos),
-                PieceType::Bishop => all_bishop_moves(self, pos),
-                PieceType::Rook => all_rook_moves(self, pos),
-                PieceType::Queen => all_queen_moves(self, pos),
-                PieceType::King => all_king_moves(self, pos, only_check_currently_attacking),
+                PieceType::Pawn => {
+                    all_pawn_moves(self, pos, piece_color, only_check_currently_attacking)
+                }
+                PieceType::Knight => all_knight_moves(self, pos, piece_color),
+                PieceType::Bishop => all_bishop_moves(self, pos, piece_color),
+                PieceType::Rook => all_rook_moves(self, pos, piece_color),
+                PieceType::Queen => all_queen_moves(self, pos, piece_color),
+                PieceType::King => {
+                    all_king_moves(self, pos, piece_color, only_check_currently_attacking)
+                }
             }
         } else {
             panic!("no piece at pos");
@@ -430,12 +435,49 @@ impl Game {
 
     // Checks if pos is being attacked by color
     pub fn square_attacked_by_color(&self, pos: Pos, color: Color) -> bool {
-        let valid_move_for_color = self.all_valid_moves_for_color_impl(color, true);
-
-        for m in valid_move_for_color {
-            if m.end_pos == pos {
-                return true;
+        let check_pos_has_piece_type = |pos: Pos, piece_type: PieceType| -> bool {
+            if let Some(piece) = self.board[pos] {
+                piece.piece_type == piece_type && piece.color == color
+            } else {
+                false
             }
+        };
+
+        let piece_color = color.opposite();
+
+        if all_knight_moves(self, pos, piece_color)
+            .iter()
+            .any(|p| check_pos_has_piece_type(*p, PieceType::Knight))
+        {
+            return true;
+        }
+
+        if all_bishop_moves(self, pos, piece_color).iter().any(|p| {
+            check_pos_has_piece_type(*p, PieceType::Bishop)
+                || check_pos_has_piece_type(*p, PieceType::Queen)
+        }) {
+            return true;
+        }
+
+        if all_rook_moves(self, pos, piece_color).iter().any(|p| {
+            check_pos_has_piece_type(*p, PieceType::Rook)
+                || check_pos_has_piece_type(*p, PieceType::Queen)
+        }) {
+            return true;
+        }
+
+        if all_king_moves(self, pos, piece_color, true)
+            .iter()
+            .any(|p| check_pos_has_piece_type(*p, PieceType::King))
+        {
+            return true;
+        }
+
+        if all_pawn_moves(self, pos, piece_color, true)
+            .iter()
+            .any(|p| check_pos_has_piece_type(*p, PieceType::Pawn))
+        {
+            return true;
         }
 
         false

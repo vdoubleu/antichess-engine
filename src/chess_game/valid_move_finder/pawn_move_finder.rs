@@ -4,16 +4,10 @@ use crate::chess_game::{Color, Game, Pos};
 pub fn all_valid_moves_for_pawn(
     game: &Game,
     pos: Pos,
+    color: Color,
     only_check_currently_attacking: bool,
 ) -> Vec<Pos> {
     let mut valid_moves: Vec<Pos> = Vec::new();
-
-    let piece = match game.get_piece(pos) {
-        Some(p) => p,
-        None => return valid_moves,
-    };
-
-    let color = piece.color;
 
     let pawn_moves: Vec<i8> = match color {
         Color::White => vec![-10, -20, -9, -11],
@@ -102,7 +96,7 @@ mod pawn_tests {
         let game = Game::from_fen_notation("8/5p2/4P1P1/8/8/8/8/8");
         let pos = Pos::new(1, 5);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos, Color::Black, false);
         let expected_moves = vec![
             Pos::new(2, 5),
             Pos::new(3, 5),
@@ -119,7 +113,7 @@ mod pawn_tests {
         let game = Game::from_fen_notation("8/8/8/8/8/4p1p1/5P2/8");
         let pos = Pos::new(6, 5);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos, Color::White, false);
         let expected_moves = vec![
             Pos::new(5, 5),
             Pos::new(4, 5),
@@ -136,7 +130,7 @@ mod pawn_tests {
         let game = Game::from_fen_notation("8/8/8/8/8/8/4P3/8");
         let pos = Pos::new(6, 4);
 
-        let valid_moves = all_valid_moves_for_pawn(&game, pos, false);
+        let valid_moves = all_valid_moves_for_pawn(&game, pos, Color::White, false);
         let expected_moves = vec![Pos::new(5, 4), Pos::new(4, 4)];
 
         eprintln!("{:?}", valid_moves);
