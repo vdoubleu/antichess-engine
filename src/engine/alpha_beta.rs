@@ -85,7 +85,7 @@ fn alpha_beta_impl(
     do_null: bool,
     params: &AlphaBetaParams,
 ) -> f64 {
-    if curr_depth <= 0 || max_depth <= 0 {
+    if curr_depth <= 0 || max_depth <= 0 || game.winner.is_some() {
         let pov = if game.player_turn == Color::White {
             1.0
         } else {
