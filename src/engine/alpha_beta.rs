@@ -47,10 +47,9 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
     let mut ind = 1;
     for chess_move in all_valid_moves {
         if params.debug_print {
-            println!("{} / {}", ind, valid_moves_len);
+            eprintln!("Trying move {} of {}", ind, valid_moves_len);
         }
 
-        eprintln!("Trying move {} of {}", ind, valid_moves_len);
         new_game.move_piece(&chess_move);
 
         let eval = -alpha_beta_impl(
