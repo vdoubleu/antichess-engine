@@ -1,5 +1,6 @@
 mod alpha_beta;
 mod evaluate_game;
+mod move_sort;
 mod position_scores;
 mod random;
 

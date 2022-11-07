@@ -1,5 +1,6 @@
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::evaluate_game::evaluate;
+use crate::engine::move_sort::sort_moves;
 
 pub struct AlphaBetaParams {
     /// the usual depth to search to.
@@ -31,14 +32,14 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
     let reasonable_depth = params.depth;
     let max_depth = params.max_depth;
 
-    let mut best_moves: Vec<ChessMove> = Vec::new();
+    let mut best_move: Option<ChessMove> = None;
 
     let mut alpha = f64::NEG_INFINITY;
     let beta = f64::INFINITY;
 
     let mut best_score = f64::NEG_INFINITY;
 
-    let all_valid_moves = game.all_valid_moves_for_color(color);
+    let mut all_valid_moves = game.all_valid_moves_for_color(color);
     let valid_moves_len = all_valid_moves.len();
 
     if all_valid_moves.is_empty() {
@@ -46,6 +47,9 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
     }
 
     let mut new_game = game.clone();
+
+    // move ordering
+    sort_moves(&new_game, &mut all_valid_moves);
 
     let mut ind = 1;
     for chess_move in all_valid_moves {
@@ -67,12 +71,11 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
 
         new_game.unmove_move();
 
-        if eval == best_score {
-            best_moves.push(chess_move);
+        if eval == best_score && best_move.is_none() {
+            best_move = Some(chess_move)
         } else if eval > best_score {
             best_score = eval;
-            best_moves.clear();
-            best_moves.push(chess_move);
+            best_move = Some(chess_move);
         }
 
         if best_score > alpha {
@@ -86,13 +89,7 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
         ind += 1;
     }
 
-    if best_moves.is_empty() {
-        return None;
-    }
-
-    // we have an array of moves with the same score. For now, we will just pick the first one
-    // but later on we can do something more intelligent
-    Some(best_moves[0])
+    best_move
 }
 
 fn alpha_beta_impl(
@@ -138,8 +135,11 @@ fn alpha_beta_impl(
         }
     }
 
-    let all_valid_moves = game.all_valid_moves_for_color(game.player_turn);
+    let mut all_valid_moves = game.all_valid_moves_for_color(game.player_turn);
     let valid_moves_len = all_valid_moves.len();
+
+    // move ordering
+    sort_moves(game, &mut all_valid_moves);
 
     let mut curr_alpha = alpha;
 

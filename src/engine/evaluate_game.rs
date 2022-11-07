@@ -53,7 +53,7 @@ pub fn evaluate(game: &Game) -> f64 {
     for (piece, pos) in game.get_all_pieces() {
         let piece_color = piece.color;
 
-        let piece_score = evaluate_material(&piece)
+        let piece_score = evaluate_material(&piece.piece_type)
             + evaluate_piece_pos(&piece, pos, game)
             + evaluate_threats_and_support(game, &piece, pos, &mut eval_store);
 
@@ -68,8 +68,8 @@ pub fn evaluate(game: &Game) -> f64 {
 }
 
 /// following regular piece values
-fn evaluate_material(piece: &Piece) -> f64 {
-    match piece.piece_type {
+fn evaluate_material(piece: &PieceType) -> f64 {
+    match piece {
         PieceType::Pawn => 100.0,
         PieceType::Knight => 320.0,
         PieceType::Bishop => 330.0,
@@ -193,9 +193,9 @@ mod evaluate_tests {
         let mut piece_count = 0;
         for (piece, _) in game.get_all_pieces() {
             if piece.color == Color::White {
-                score += evaluate_material(&piece);
+                score += evaluate_material(&piece.piece_type);
             } else {
-                score -= evaluate_material(&piece);
+                score -= evaluate_material(&piece.piece_type);
             }
             piece_count += 1;
         }
