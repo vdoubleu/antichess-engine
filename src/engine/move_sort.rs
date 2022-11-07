@@ -20,6 +20,9 @@ fn sort_captures(game: &Game, move_list: &mut [ChessMove]) {
         }
     }
 
+    // TODO sort pieces by agressor and victim
+    // TODO skip if not a capture
+
     move_list.sort_by(|a, b| {
         let a_piece = game.get_piece(a.end_pos);
         let b_piece = game.get_piece(b.end_pos);
