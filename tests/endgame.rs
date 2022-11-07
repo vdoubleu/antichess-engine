@@ -1,4 +1,4 @@
-use antichess_engine::chess_game::{Color, Game};
+use antichess_engine::chess_game::{ChessMove, Color, Game};
 use antichess_engine::engine::generate_move;
 
 #[test]
@@ -9,6 +9,20 @@ fn test_endgame() {
     assert!(m.is_some());
 
     let m = m.unwrap();
+
+    game.move_piece(&m);
+}
+
+#[test]
+fn test_endgame_forcetake() {
+    let mut game = Game::from_fen_notation("2bqk2r/1p1p1ppp/2pNp3/7P/8/8/R2KP3/2B2BnR");
+
+    let m = generate_move(&game, Color::White);
+    assert!(m.is_some());
+
+    let m = m.unwrap();
+
+    assert_eq!(m, ChessMove::from_xboard_algebraic_notation("d6e8"));
 
     game.move_piece(&m);
 }

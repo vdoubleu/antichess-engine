@@ -13,6 +13,9 @@ struct Args {
     // the color of the engine_color
     #[clap(value_enum, default_value = "white")]
     color: Color,
+
+    #[clap(value_enum, default_value = "false")]
+    debug: bool,
 }
 
 fn print_move_list(moves: &Vec<ChessMove>) {

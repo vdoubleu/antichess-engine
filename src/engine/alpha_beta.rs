@@ -17,7 +17,7 @@ pub struct AlphaBetaParams {
 impl Default for AlphaBetaParams {
     fn default() -> Self {
         AlphaBetaParams {
-            depth: 4,
+            depth: 5,
             max_depth: 16,
             null_move_reduction: 2,
             debug_print: false,
@@ -31,7 +31,10 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
     let reasonable_depth = params.depth;
     let max_depth = params.max_depth;
 
-    let mut best_move = None;
+    let mut best_moves: Vec<ChessMove> = Vec::new();
+
+    let mut alpha = f64::NEG_INFINITY;
+    let beta = f64::INFINITY;
 
     let mut best_score = f64::NEG_INFINITY;
 
@@ -54,8 +57,8 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
 
         let eval = -alpha_beta_impl(
             &mut new_game,
-            f64::NEG_INFINITY,
-            f64::INFINITY,
+            -beta,
+            -alpha,
             reasonable_depth + (ind % 2),
             max_depth,
             true,
@@ -64,15 +67,32 @@ pub fn alpha_beta(game: &Game, color: Color, params: &AlphaBetaParams) -> Option
 
         new_game.unmove_move();
 
-        if eval >= best_score {
+        if eval == best_score {
+            best_moves.push(chess_move);
+        } else if eval > best_score {
             best_score = eval;
-            best_move = Some(chess_move);
+            best_moves.clear();
+            best_moves.push(chess_move);
+        }
+
+        if best_score > alpha {
+            alpha = best_score;
+        }
+
+        if alpha >= beta {
+            break;
         }
 
         ind += 1;
     }
 
-    best_move
+    if best_moves.is_empty() {
+        return None;
+    }
+
+    // we have an array of moves with the same score. For now, we will just pick the first one
+    // but later on we can do something more intelligent
+    Some(best_moves[0])
 }
 
 fn alpha_beta_impl(
@@ -151,15 +171,11 @@ fn alpha_beta_impl(
 
         game.unmove_move();
 
-        if eval >= score {
-            score = eval;
+        score = score.max(eval);
+        curr_alpha = curr_alpha.max(score);
 
-            if eval > curr_alpha {
-                if eval >= beta {
-                    return beta;
-                }
-                curr_alpha = eval;
-            }
+        if eval >= beta {
+            break;
         }
     }
 
