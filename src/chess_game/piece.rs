@@ -39,6 +39,27 @@ impl Piece {
             Color::White => self.piece_type.char_notation(),
         }
     }
+
+    pub fn unicode_char(&self) -> char {
+        match self.color {
+            Color::White => match self.piece_type {
+                PieceType::Pawn => '♟',
+                PieceType::Rook => '♜',
+                PieceType::Knight => '♞',
+                PieceType::Bishop => '♝',
+                PieceType::Queen => '♛',
+                PieceType::King => '♚',
+            },
+            Color::Black => match self.piece_type {
+                PieceType::Pawn => '♙',
+                PieceType::Rook => '♖',
+                PieceType::Knight => '♘',
+                PieceType::Bishop => '♗',
+                PieceType::Queen => '♕',
+                PieceType::King => '♔',
+            },
+        }
+    }
 }
 
 impl PieceType {

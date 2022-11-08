@@ -1,10 +1,8 @@
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::evaluate_game::evaluate;
 use crate::engine::move_sort::sort_moves;
-
-use std::time::{Duration, Instant};
-
-use std::collections::HashMap;
+use crate::engine::store::{AlphaBetaStore, TranspositionTableFlag};
+use std::time::Duration;
 
 pub struct AlphaBetaParams {
     /// the usual depth to search to.
@@ -16,7 +14,9 @@ pub struct AlphaBetaParams {
     /// deep we go compared to the normal depth.
     pub null_move_reduction: i32,
     /// enables debug printing
-    pub debug_print: bool,
+    pub debug_print: i8,
+    /// the maximum amount of time to search for
+    pub max_time: Duration,
 }
 
 impl Default for AlphaBetaParams {
@@ -25,68 +25,9 @@ impl Default for AlphaBetaParams {
             depth: 6,
             max_depth: 16,
             null_move_reduction: 2,
-            debug_print: false,
-        }
-    }
-}
-
-pub struct AlphaBetaStore {
-    /// when the searching was started
-    pub start_time: Instant,
-    /// the maximum amount of time to search for
-    pub max_time: Duration,
-
-    /// stores the transposition table
-    pub transposition_table: HashMap<String, TranspositionTableEntry>,
-}
-
-impl AlphaBetaStore {
-    pub fn new() -> Self {
-        AlphaBetaStore {
-            start_time: Instant::now(),
+            debug_print: 1,
             max_time: Duration::from_secs(15),
-            transposition_table: HashMap::new(),
         }
-    }
-}
-
-pub struct TranspositionTableEntry {
-    pub depth: i32,
-    pub chess_move: Option<ChessMove>,
-    pub fen: String,
-    pub score: f64,
-    pub flag: TranspositionTableFlag,
-}
-
-pub enum TranspositionTableFlag {
-    Exact,
-    Upper,
-    Lower,
-}
-
-impl AlphaBetaStore {
-    fn store_transposition(
-        &mut self,
-        game: &Game,
-        depth: i32,
-        score: f64,
-        chess_move: Option<ChessMove>,
-        node_type: TranspositionTableFlag,
-    ) {
-        let fen = game.get_fen_notation();
-        let entry = TranspositionTableEntry {
-            depth,
-            chess_move,
-            fen: fen.clone(),
-            score,
-            flag: node_type,
-        };
-
-        self.transposition_table.insert(fen, entry);
-    }
-
-    fn get_transposition(&mut self, hash: &str) -> Option<&TranspositionTableEntry> {
-        self.transposition_table.get(hash)
     }
 }
 
@@ -118,16 +59,20 @@ pub fn alpha_beta(
     let mut new_game = game.clone();
 
     // move ordering
-    sort_moves(&new_game, &mut all_valid_moves);
+    all_valid_moves = sort_moves(&new_game, store, &all_valid_moves);
 
     let mut ind = 1;
     for chess_move in all_valid_moves {
-        if params.debug_print {
+        if params.debug_print > 1 {
             eprintln!("Trying move {} of {}", ind, valid_moves_len);
         }
 
-        if store.start_time.elapsed() > store.max_time {
-            break;
+        if let Some(start_time) = store.start_time {
+            if start_time.elapsed() > params.max_time {
+                break;
+            }
+        } else {
+            panic!("start time not set");
         }
 
         new_game.move_piece(&chess_move);
@@ -136,7 +81,7 @@ pub fn alpha_beta(
             &mut new_game,
             -beta,
             -alpha,
-            reasonable_depth + (ind % 2),
+            reasonable_depth, //+ (ind % 2),
             max_depth,
             true,
             params,
@@ -173,9 +118,12 @@ pub fn alpha_beta(
 
     store.store_transposition(game, reasonable_depth, best_score, best_move, node_type);
 
+    store.probe_fill_pv(&mut new_game);
+
     best_move.map(|m| (m, best_score))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn alpha_beta_impl(
     game: &mut Game,
     alpha: f64,
@@ -199,7 +147,7 @@ fn alpha_beta_impl(
     let mut curr_alpha = alpha;
     let mut curr_beta = beta;
 
-    if let Some(transpo) = store.get_transposition(&game.get_fen_notation()) {
+    if let Some(transpo) = store.get_transposition(game) {
         if game.get_fen_notation() == transpo.fen && transpo.depth >= curr_depth {
             match transpo.flag {
                 TranspositionTableFlag::Exact => {
@@ -246,7 +194,7 @@ fn alpha_beta_impl(
     let valid_moves_len = all_valid_moves.len();
 
     // move ordering
-    sort_moves(game, &mut all_valid_moves);
+    all_valid_moves = sort_moves(game, store, &all_valid_moves);
 
     let new_curr_depth = if valid_moves_len <= 3 {
         curr_depth
@@ -256,18 +204,22 @@ fn alpha_beta_impl(
 
     let mut score = f64::NEG_INFINITY;
 
-    let mut cut_move = None;
+    let mut best_move = None;
 
     for move_option in all_valid_moves {
-        if params.debug_print {
-            println!(
+        if params.debug_print > 1 {
+            eprintln!(
                 "move: {} {} {:?}",
                 game.player_turn, move_option, move_option
             );
         }
 
-        if store.start_time.elapsed() > store.max_time {
-            break;
+        if let Some(start_time) = store.start_time {
+            if start_time.elapsed() > params.max_time {
+                break;
+            }
+        } else {
+            panic!("start time not set");
         }
 
         game.move_piece(&move_option);
@@ -287,12 +239,12 @@ fn alpha_beta_impl(
 
         if eval > score {
             score = eval;
+            best_move = Some(move_option);
         }
         if score > curr_alpha {
             curr_alpha = score;
         }
         if curr_alpha >= curr_beta {
-            cut_move = Some(move_option);
             break;
         }
     }
@@ -305,7 +257,7 @@ fn alpha_beta_impl(
         TranspositionTableFlag::Exact
     };
 
-    store.store_transposition(game, curr_depth, score, cut_move, node_type);
+    store.store_transposition(game, curr_depth, score, best_move, node_type);
 
     score
 }
@@ -345,20 +297,20 @@ mod alpha_beta_tests {
         let move1 = move1_option.unwrap().0;
         assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e4d5"));
 
-        // try again with a alpha beta depth of 3
-        let move2_option = alpha_beta(
-            &game,
-            Color::White,
-            &AlphaBetaParams {
-                depth: 3,
-                ..Default::default()
-            },
-            &mut AlphaBetaStore::new(),
-        );
-        assert!(move2_option.is_some());
+        // // try again with a alpha beta depth of 3
+        // let move2_option = alpha_beta(
+        //     &game,
+        //     Color::White,
+        //     &AlphaBetaParams {
+        //         depth: 3,
+        //         ..Default::default()
+        //     },
+        //     &mut AlphaBetaStore::new(),
+        // );
+        // assert!(move2_option.is_some());
 
-        let move2 = move2_option.unwrap().0;
-        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e4d5"));
+        // let move2 = move2_option.unwrap().0;
+        // assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e4d5"));
     }
 
     #[test]
