@@ -11,12 +11,13 @@ use std::io::{self, BufRead};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    // the color of the engine_color
+    /// the color of the engine_color
     #[clap(value_enum, default_value = "white")]
     color: Color,
 
-    #[clap(value_enum, default_value = "false")]
-    debug: bool,
+    /// Debug level, 0, 1, or 2
+    #[clap(short, long, default_value = "0")]
+    debug: i8,
 }
 
 fn print_move_list(moves: &Vec<ChessMove>) {

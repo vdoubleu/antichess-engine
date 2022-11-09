@@ -43,6 +43,12 @@ impl AlphaBetaStore {
         chess_move: Option<ChessMove>,
         node_type: TranspositionTableFlag,
     ) {
+        if let Some(existing_entry) = self.get_transposition(game) {
+            if existing_entry.depth >= depth {
+                return;
+            }
+        }
+
         let fen = game.get_fen_notation();
         let entry = TranspositionTableEntry {
             depth,
@@ -55,7 +61,7 @@ impl AlphaBetaStore {
         self.transposition_table.insert(fen, entry);
     }
 
-    pub fn get_transposition(&mut self, game: &Game) -> Option<&TranspositionTableEntry> {
+    pub fn get_transposition(&self, game: &Game) -> Option<&TranspositionTableEntry> {
         let hash = self.hash(game);
         self.transposition_table.get(&hash)
     }
