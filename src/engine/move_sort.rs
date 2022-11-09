@@ -21,6 +21,7 @@ pub fn sort_moves(
     }
 
     score_pv(store, &mut scored_moves);
+    score_tt(store, game, &mut scored_moves);
 
     // sort moves
     scored_moves.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
@@ -34,7 +35,24 @@ fn score_pv(store: &AlphaBetaStore, scored_moves: &mut [(&ChessMove, f64)]) {
     for (m, score) in scored_moves.iter_mut() {
         for (ind, pv_move) in store.pv.iter().enumerate() {
             if &pv_move == m {
-                *score += 1000.0 + (pv_len - ind) as f64 * 10.0;
+                *score += 10000.0 + (pv_len - ind) as f64 * 10.0;
+            }
+        }
+    }
+}
+
+fn score_tt(store: &AlphaBetaStore, game: &Game, scored_moves: &mut [(&ChessMove, f64)]) {
+    let transpo = store.get_transposition(game);
+
+    if transpo.is_none() {
+        return;
+    }
+
+    let transpo_entry = transpo.unwrap();
+    if let Some(transpo_move) = transpo_entry.chess_move {
+        for (m, score) in scored_moves.iter_mut() {
+            if &transpo_move == *m {
+                *score += 1000.0;
             }
         }
     }
