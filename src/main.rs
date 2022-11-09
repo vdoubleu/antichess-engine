@@ -3,6 +3,7 @@ mod engine;
 
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::generate_move;
+use crate::engine::store::AlphaBetaStore;
 
 use clap::Parser;
 use std::io::{self, BufRead};
@@ -36,8 +37,10 @@ fn main() {
     let your_color = args.color;
     let opp_color = args.color.opposite();
 
+    let mut store = AlphaBetaStore::new();
+
     if your_color == Color::White {
-        let m = match generate_move(&game, Color::White) {
+        let m = match generate_move(&game, &mut store, Color::White) {
             Some(m) => {
                 println!("{}", m);
                 m
@@ -53,12 +56,12 @@ fn main() {
             println!("Game over. Winner: {}", winner);
             return;
         }
-
-        eprintln!("{}", game);
-
-        let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-        print_move_list(&opp_valid_moves);
     }
+
+    eprintln!("{}", game);
+
+    let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+    print_move_list(&opp_valid_moves);
 
     for line in stdin.lock().lines() {
         match line {
@@ -68,10 +71,11 @@ fn main() {
 
                 if let Some(winner) = game.winner {
                     println!("Game over. Winner: {}", winner);
+                    eprintln!("turns: {}", game.turn_counter);
                     return;
                 }
 
-                let m = match generate_move(&game, your_color) {
+                let m = match generate_move(&game, &mut store, your_color) {
                     Some(m) => {
                         println!("{}", m);
                         m
@@ -86,6 +90,7 @@ fn main() {
 
                 if let Some(winner) = game.winner {
                     println!("Game over. Winner: {}", winner);
+                    eprintln!("turns: {}", game.turn_counter);
                     return;
                 }
 

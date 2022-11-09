@@ -35,7 +35,7 @@ fn test_unmove_piece_basic() {
 
     assert_eq!(
         game.get_fen_notation(),
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
     );
 }
 
@@ -149,10 +149,10 @@ fn test_pawn_promotion_while_take_then_undo() {
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r"));
 
     assert_eq!(game.player_turn, Color::Black);
-    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8");
+    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8 b");
 
     game.unmove_move();
 
     assert_eq!(game.player_turn, Color::White);
-    assert_eq!(game.get_fen_notation(), "6n1/7P/8/8/8/8/8/8");
+    assert_eq!(game.get_fen_notation(), "6n1/7P/8/8/8/8/8/8 w");
 }
