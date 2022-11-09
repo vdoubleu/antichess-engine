@@ -7,7 +7,7 @@ fn test_create_game() {
     assert_eq!(game.player_turn, Color::White);
     assert_eq!(
         game.get_fen_notation(),
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
     );
 }
 
@@ -21,7 +21,7 @@ fn test_move_piece() {
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(
         game.get_fen_notation(),
-        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"
+        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b"
     );
 
     // black moves
@@ -30,7 +30,7 @@ fn test_move_piece() {
     assert_eq!(game.player_turn, Color::White);
     assert_eq!(
         game.get_fen_notation(),
-        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR"
+        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w"
     );
 
     // white moves
@@ -39,7 +39,7 @@ fn test_move_piece() {
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(
         game.get_fen_notation(),
-        "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR"
+        "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b"
     );
 }
 
@@ -53,7 +53,7 @@ fn test_castle() {
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(
         game.get_fen_notation(),
-        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1"
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b"
     );
 
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("e8g8"));
@@ -61,7 +61,7 @@ fn test_castle() {
     assert_eq!(game.player_turn, Color::White);
     assert_eq!(
         game.get_fen_notation(),
-        "r4rk1/pppppppp/8/8/8/8/PPPPPPPP/R4RK1"
+        "r4rk1/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 w"
     );
 
     // castle queenside
@@ -72,7 +72,7 @@ fn test_castle() {
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(
         game.get_fen_notation(),
-        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R"
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b"
     );
 
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("e8c8"));
@@ -80,7 +80,7 @@ fn test_castle() {
     assert_eq!(game.player_turn, Color::White);
     assert_eq!(
         game.get_fen_notation(),
-        "2kr3r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R"
+        "2kr3r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R w"
     );
 }
 
@@ -91,7 +91,7 @@ fn test_pawn_promotion() {
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7h8q"));
 
     assert_eq!(game.player_turn, Color::Black);
-    assert_eq!(game.get_fen_notation(), "7Q/8/8/8/8/8/8/8");
+    assert_eq!(game.get_fen_notation(), "7Q/8/8/8/8/8/8/8 b");
 }
 
 #[test]
@@ -101,5 +101,5 @@ fn test_pawn_promotion_while_take() {
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r"));
 
     assert_eq!(game.player_turn, Color::Black);
-    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8");
+    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8 b");
 }

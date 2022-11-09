@@ -123,6 +123,15 @@ impl Game {
             }
         }
 
+        let player_turn_char = if self.player_turn == Color::White {
+            'w'
+        } else {
+            'b'
+        };
+
+        fen_string.push(' ');
+        fen_string.push(player_turn_char);
+
         fen_string
     }
 
@@ -530,7 +539,7 @@ mod game_tests {
         assert_eq!(game.castle_availability, [true, true, true, true]);
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
     }
 
@@ -548,7 +557,7 @@ mod game_tests {
         assert_eq!(game.castle_availability, [true, true, true, true]);
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/1ppppppp/8/p7/P7/8/1PPPPPPP/RNBQKBNR"
+            "rnbqkbnr/1ppppppp/8/p7/P7/8/1PPPPPPP/RNBQKBNR w"
         );
     }
 
@@ -570,7 +579,7 @@ mod game_tests {
         assert_eq!(game.castle_availability, [true, true, true, true]);
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
     }
 
@@ -589,7 +598,7 @@ mod game_tests {
 
         assert_eq!(
             game.get_fen_notation(),
-            "r1bqkbnr/pppppppp/2n5/4P3/8/8/PPPP1PPP/RNBQKBNR"
+            "r1bqkbnr/pppppppp/2n5/4P3/8/8/PPPP1PPP/RNBQKBNR b"
         );
     }
 
@@ -609,7 +618,7 @@ mod game_tests {
 
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
     }
 }

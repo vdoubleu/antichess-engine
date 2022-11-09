@@ -47,7 +47,7 @@ impl AlphaBetaStore {
         let entry = TranspositionTableEntry {
             depth,
             chess_move,
-            fen: fen.clone() + &game.player_turn.to_string(),
+            fen: fen.clone(),
             score,
             flag: node_type,
         };
@@ -70,12 +70,10 @@ impl AlphaBetaStore {
     }
 
     fn hash(&self, game: &Game) -> String {
-        game.get_fen_notation() + &game.player_turn.to_string()
+        game.get_fen_notation()
     }
 
     pub fn probe_fill_pv(&mut self, game: &mut Game) {
-        // self.pv.clear();
-
         let mut transpo = self.get_transposition(game);
 
         let mut move_ind = 0;
