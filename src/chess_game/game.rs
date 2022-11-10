@@ -123,6 +123,15 @@ impl Game {
             }
         }
 
+        let player_turn_char = if self.player_turn == Color::White {
+            'w'
+        } else {
+            'b'
+        };
+
+        fen_string.push(' ');
+        fen_string.push(player_turn_char);
+
         fen_string
     }
 
@@ -248,7 +257,7 @@ impl Game {
                     }
                 }
             } else {
-                eprintln!("moving an opponents piece");
+                eprintln!("ERROR: moving an opponents piece");
             }
         }
 
@@ -486,29 +495,24 @@ impl Game {
 
 impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut out_string = format!("Turn: {}\n", self.player_turn);
-
-        let divider = " -----------------\n";
-
-        out_string += divider;
+        let mut out_string = format!("Turn: {}\n\n", self.player_turn);
 
         for r in 0..8 {
             out_string += (8 - r).to_string().as_str();
-            out_string += "|";
+            out_string += "  ";
             for c in 0..8 {
                 let s = if let Some(piece) = self.get_piece(Pos::new(r, c)) {
-                    piece.char_notation().to_string()
+                    piece.unicode_char().to_string()
                 } else {
-                    " ".to_string()
+                    ".".to_string()
                 };
                 out_string += s.as_str();
-                out_string += "|";
+                out_string += " ";
             }
             out_string += "\n";
-            out_string += divider;
         }
 
-        out_string += "  a b c d e f g h\n";
+        out_string += "\n   a b c d e f g h\n";
 
         write!(f, "{}", out_string)
     }
@@ -535,7 +539,7 @@ mod game_tests {
         assert_eq!(game.castle_availability, [true, true, true, true]);
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
     }
 
@@ -553,7 +557,7 @@ mod game_tests {
         assert_eq!(game.castle_availability, [true, true, true, true]);
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/1ppppppp/8/p7/P7/8/1PPPPPPP/RNBQKBNR"
+            "rnbqkbnr/1ppppppp/8/p7/P7/8/1PPPPPPP/RNBQKBNR w"
         );
     }
 
@@ -575,7 +579,7 @@ mod game_tests {
         assert_eq!(game.castle_availability, [true, true, true, true]);
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
     }
 
@@ -594,7 +598,7 @@ mod game_tests {
 
         assert_eq!(
             game.get_fen_notation(),
-            "r1bqkbnr/pppppppp/2n5/4P3/8/8/PPPP1PPP/RNBQKBNR"
+            "r1bqkbnr/pppppppp/2n5/4P3/8/8/PPPP1PPP/RNBQKBNR b"
         );
     }
 
@@ -614,7 +618,7 @@ mod game_tests {
 
         assert_eq!(
             game.get_fen_notation(),
-            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
     }
 }

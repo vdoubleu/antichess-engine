@@ -70,6 +70,16 @@ impl ChessMove {
             false
         }
     }
+
+    pub fn is_direct_capture(&self, game: &Game) -> bool {
+        if let Some(end_piece) = game.get_piece(self.end_pos) {
+            if let Some(start_piece) = game.get_piece(self.start_pos) {
+                return start_piece.color != end_piece.color;
+            }
+        }
+
+        false
+    }
 }
 
 impl std::fmt::Display for ChessMove {

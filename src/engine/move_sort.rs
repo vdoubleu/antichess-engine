@@ -1,14 +1,64 @@
-use crate::chess_game::{ChessMove, Game, PieceType};
-use std::cmp::Ordering;
+use crate::chess_game::{ChessMove, Color, Game, Piece, PieceType};
+use crate::engine::store::AlphaBetaStore;
 
-pub fn sort_moves(game: &Game, move_list: &mut [ChessMove]) {
+pub fn sort_moves(
+    game: &Game,
+    store: &AlphaBetaStore,
+    move_list: &Vec<ChessMove>,
+) -> Vec<ChessMove> {
+    if move_list.is_empty() {
+        return vec![];
+    }
+
+    let has_captures = move_list[0].is_direct_capture(game);
+
     // put moves that capture pieces first, and in order of the value of the piece being captured
-    sort_captures(game, move_list);
+    // sort_captures(game, move_list);
+    let mut scored_moves: Vec<(&ChessMove, f64)> = move_list.iter().map(|m| (m, 0.0)).collect();
+
+    if has_captures {
+        score_captures(game, &mut scored_moves);
+    }
+
+    score_pv(store, &mut scored_moves);
+    score_tt(store, game, &mut scored_moves);
+
+    // sort moves
+    scored_moves.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    scored_moves.reverse();
+
+    scored_moves.iter().map(|m| *m.0).collect()
 }
 
-fn sort_captures(game: &Game, move_list: &mut [ChessMove]) {
-    // sort captures by the value of the piece being captured
+fn score_pv(store: &AlphaBetaStore, scored_moves: &mut [(&ChessMove, f64)]) {
+    let pv_len = store.pv.len();
+    for (m, score) in scored_moves.iter_mut() {
+        for (ind, pv_move) in store.pv.iter().enumerate() {
+            if &pv_move == m {
+                *score += 10000.0 + (pv_len - ind) as f64 * 10.0;
+            }
+        }
+    }
+}
 
+fn score_tt(store: &AlphaBetaStore, game: &Game, scored_moves: &mut [(&ChessMove, f64)]) {
+    let transpo = store.get_transposition(game);
+
+    if transpo.is_none() {
+        return;
+    }
+
+    let transpo_entry = transpo.unwrap();
+    if let Some(transpo_move) = transpo_entry.chess_move {
+        for (m, score) in scored_moves.iter_mut() {
+            if &transpo_move == *m {
+                *score += 1000.0;
+            }
+        }
+    }
+}
+
+fn score_captures(game: &Game, move_list: &mut [(&ChessMove, f64)]) {
     fn eval_cost(piece_type: PieceType) -> f64 {
         match piece_type {
             PieceType::Pawn => 1.0,
@@ -16,28 +66,24 @@ fn sort_captures(game: &Game, move_list: &mut [ChessMove]) {
             PieceType::Bishop => 3.0,
             PieceType::Rook => 5.0,
             PieceType::Queen => 9.0,
-            PieceType::King => f64::INFINITY,
+            PieceType::King => 15.0,
         }
     }
 
-    move_list.sort_by(|a, b| {
-        let a_piece = game.get_piece(a.end_pos);
-        let b_piece = game.get_piece(b.end_pos);
-        if a_piece.is_none() && b_piece.is_none() {
-            return Ordering::Equal;
-        } else if a_piece.is_none() {
-            return Ordering::Greater;
-        } else if b_piece.is_none() {
-            return Ordering::Less;
-        }
-        let a_piece = a_piece.unwrap();
-        let b_piece = b_piece.unwrap();
-        let a_value = eval_cost(a_piece.piece_type);
-        let b_value = eval_cost(b_piece.piece_type);
-        a_value.partial_cmp(&b_value).unwrap()
-    });
+    for (m, score) in move_list.iter_mut() {
+        let attacking_piece: PieceType = game
+            .get_piece(m.start_pos)
+            .unwrap_or_else(|| Piece::new(PieceType::Pawn, Color::White))
+            .piece_type;
 
-    move_list.reverse();
+        let victim_piece: PieceType = game
+            .get_piece(m.end_pos)
+            .unwrap_or_else(|| Piece::new(PieceType::Pawn, Color::White))
+            .piece_type;
+
+        // ratio of two pieces
+        *score += eval_cost(victim_piece) / eval_cost(attacking_piece);
+    }
 }
 
 #[cfg(test)]
@@ -56,7 +102,9 @@ mod sort_tests {
             ChessMove::from_xboard_algebraic_notation("e4c5"),
         ];
 
-        sort_moves(&game, &mut move_list);
+        let store = AlphaBetaStore::new();
+
+        move_list = sort_moves(&game, &store, &move_list);
 
         assert_eq!(
             move_list[0],
