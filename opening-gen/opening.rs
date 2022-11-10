@@ -7,7 +7,7 @@ pub struct OpeningBook {
 impl OpeningBook { 
     pub fn new() -> OpeningBook { 
         let openings: HashMap<String, ChessMove> = HashMap::from([
-(String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"), ChessMove::new(97, 78, None)),
+(String::from("rnbqkbnr/pppppppp/8/8/8/1P6/P1PPPPPP/RNBQKBNR b"), ChessMove::new(27, 46, None)),(String::from("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b"), ChessMove::new(27, 46, None)),(String::from("rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b"), ChessMove::new(32, 52, None)),(String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"), ChessMove::new(92, 71, None)),(String::from("rnbqkbnr/pppppppp/8/8/1P6/8/P1PPPPPP/RNBQKBNR b"), ChessMove::new(27, 46, None)),
         ]);
         OpeningBook { openings, } 
     } 

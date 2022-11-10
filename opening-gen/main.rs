@@ -1,6 +1,8 @@
 use antichess_engine::chess_game::{ChessMove, Game};
-use antichess_engine::engine::{generate_move, store::AlphaBetaStore};
+use antichess_engine::engine::Engine;
 use std::collections::HashMap;
+
+use std::time::Duration;
 
 use std::fs;
 
@@ -17,8 +19,8 @@ fn main() -> std::io::Result<()> {
 
 fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
     fn gen_rec(
+        engine: &mut Engine,
         store: &mut HashMap<String, ChessMove>,
-        ab_store: &mut AlphaBetaStore,
         game: &mut Game,
         depth: u8,
     ) {
@@ -26,7 +28,7 @@ fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
             return;
         }
 
-        let best_move_option = generate_move(game, ab_store, game.player_turn, None);
+        let best_move_option = engine.generate_move(game, game.player_turn);
 
         if let Some(best_move) = best_move_option {
             store.insert(game.get_fen_notation(), best_move);
@@ -38,16 +40,24 @@ fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
 
         for m in moves {
             game.move_piece(&m);
-            gen_rec(store, ab_store, game, depth - 1);
+
+            gen_rec(engine, store, game, depth - 1);
+
             game.unmove_move();
         }
     }
 
-    let recursion_depth = 1;
+    let recursion_depth = 4;
+    let reasonable_search_depth = 6;
+    let timeout = 60; // in seconds
 
     let mut game = Game::new_starting_game();
-    let mut ab_store = AlphaBetaStore::new();
-    gen_rec(store_main, &mut ab_store, &mut game, recursion_depth);
+    let mut engine = Engine::new();
+
+    engine.params.depth = reasonable_search_depth;
+    engine.params.max_time = Duration::from_secs(timeout);
+
+    gen_rec(&mut engine, store_main, &mut game, recursion_depth);
 }
 
 fn write_opening_book_to_file(
@@ -101,7 +111,7 @@ impl Default for OpeningBook {
             )
         };
 
-        let line = format!("(String::from(\"{}\"), {}),", fen, chess_move_str);
+        let line = format!("(String::from(\"{}\"), {}),\n", fen, chess_move_str);
         content.push_str(line.as_str());
     }
 
