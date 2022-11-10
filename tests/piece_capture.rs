@@ -1,4 +1,5 @@
 use antichess_engine::chess_game::{ChessMove, Game};
+use antichess_engine::engine::Engine;
 
 #[test]
 fn test_pawn_capture() {
@@ -34,4 +35,29 @@ fn test_en_passant() {
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b3"));
 
     assert_eq!(game.get_fen_notation(), "8/8/8/8/8/1p6/8/8 w",);
+}
+
+#[test]
+fn test_en_passant_2() {
+    let mut game = Game::from_fen_notation("1nbqkbnr/r1ppp1p1/5p1p/1p6/P4P1P/8/1PPPP1P1/1NBQKBNR");
+    let mut engine = Engine::new();
+    engine.params.depth = 6;
+
+    let m = engine.generate_move(&game, game.player_turn);
+
+    assert!(m.is_some());
+
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b5"));
+
+    let m = engine.generate_move(&game, game.player_turn);
+
+    assert!(m.is_some());
+
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation("c7c5"));
+
+    let m = engine.generate_move(&game, game.player_turn);
+
+    assert!(m.is_some());
+
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation("b5c6"));
 }
