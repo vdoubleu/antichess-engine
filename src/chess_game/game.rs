@@ -23,6 +23,7 @@ impl Game {
             en_passant_pos: None,
             winner: None,
             undo_move_history: Vec::new(),
+            king_pos: [Pos::new(0, 4), Pos::new(7, 4)],
         }
     }
 
@@ -30,11 +31,22 @@ impl Game {
     /// This is mostly for internal use when creating a new game
     pub fn add_piece(&mut self, piece: &Piece, pos: Pos) -> &mut Self {
         self.board[pos] = Some(*piece);
+
+        if piece.piece_type == PieceType::King {
+            self.king_pos[piece.color as usize] = pos;
+        }
+
         self
     }
 
     /// Removes a piece at a given square.
     pub fn remove_piece(&mut self, pos: Pos) -> &mut Self {
+        if let Some(piece) = self.board[pos] {
+            if piece.piece_type == PieceType::King {
+                self.king_pos[piece.color as usize] = Pos::new(0, 0);
+            }
+        }
+
         self.board[pos] = None;
         self
     }
@@ -44,6 +56,10 @@ impl Game {
         if let Some(piece) = self.board[start_pos] {
             self.board[end_pos] = Some(piece);
             self.board[start_pos] = None;
+
+            if piece.piece_type == PieceType::King {
+                self.king_pos[piece.color as usize] = end_pos;
+            }
         } else {
             eprintln!("{}", self);
             eprintln!("{}", self.get_fen_notation());
@@ -203,6 +219,26 @@ impl Game {
         }
     }
 
+    /// Returns a vector of all the valid moves for a color, regardless of whether they take or not
+    /// or not. Remove moves that put the king in check
+    #[allow(dead_code)]
+    pub fn all_valid_moves_for_color_perft(&self, color: Color) -> Vec<ChessMove> {
+        let all_valid_moves = self.all_valid_moves_for_color_impl(color, false);
+
+        let king_safe_moves = all_valid_moves
+            .iter()
+            .filter(|m| {
+                let mut game_copy = self.clone();
+                game_copy.move_piece(m);
+                !game_copy
+                    .square_attacked_by_color(game_copy.king_pos[color as usize], color.opposite())
+            })
+            .copied()
+            .collect::<Vec<ChessMove>>();
+
+        king_safe_moves
+    }
+
     pub fn is_move_that_takes(&self, m: &ChessMove, color: Color) -> bool {
         self.has_piece_with_color(m.end_pos, color.opposite()) || m.is_en_passant(self)
     }
@@ -290,6 +326,13 @@ impl Game {
         let moving_piece_type = self.board[chess_move.start_pos].unwrap().piece_type;
         let (from_row, from_col) = chess_move.start_pos.to_row_col_as_i8();
         let (to_row, to_col) = chess_move.end_pos.to_row_col_as_i8();
+
+        // check if king pos needs to be updated
+        if let Some(piece) = self.board[chess_move.start_pos] {
+            if piece.piece_type == PieceType::King {
+                self.king_pos[piece.color as usize] = chess_move.end_pos;
+            }
+        }
 
         let king_was_taken = if let Some(p) = self.board[chess_move.end_pos] {
             p.piece_type == PieceType::King
@@ -408,6 +451,11 @@ impl Game {
         let undo_piece_type = self.board[undo_move.end_pos].unwrap().piece_type;
         let start_col = undo_move.start_pos.col() as i8;
         let (end_row, end_col) = undo_move.end_pos.to_row_col_as_i8();
+
+        // update king pos
+        if undo_piece_type == PieceType::King {
+            self.king_pos[self.player_turn as usize] = undo_move.start_pos;
+        }
 
         // move piece back
         self.board[undo_move.start_pos] = self.board[undo_move.end_pos].take();

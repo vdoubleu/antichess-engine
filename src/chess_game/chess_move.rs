@@ -80,6 +80,19 @@ impl ChessMove {
 
         false
     }
+
+    #[allow(dead_code)]
+    pub fn is_castle(&self, game: &Game) -> bool {
+        if let Some(start_piece) = game.get_piece(self.start_pos) {
+            if start_piece.piece_type == PieceType::King {
+                let start_col = self.start_pos.col() as i8;
+                let end_col = self.end_pos.col() as i8;
+                return (start_col - end_col).abs() == 2;
+            }
+        }
+
+        false
+    }
 }
 
 impl std::fmt::Display for ChessMove {
