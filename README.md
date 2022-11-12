@@ -38,3 +38,4 @@ The repo should come with an existing up to date opening book, but if for some r
 
 - gen opening book for first moves for either side
 
+- 50 move draw, draw by repetition
