@@ -24,3 +24,17 @@ cargo run --bin opening-gen
 to generate the most up to date opening book.
 
 The repo should come with an existing up to date opening book, but if for some reason you need to recreate it, you can run that command.
+
+
+## TODO list
+- when error encountered for move gen, try gen on smaller depth, or resort to random move
+- handle error in piece move
+
+- perft sketchy en passant pos
+
+- king safety evaluation
+
+- dynamic search depth / search time
+
+- gen opening book for first moves for either side
+

@@ -109,8 +109,7 @@ impl Engine {
         if self.params.debug_print > 0 {
             eprintln!(
                 "search time: {}, total_time: {}",
-                search_time,
-                self.store.total_search_time_ms
+                search_time, self.store.total_search_time_ms
             );
         }
 
