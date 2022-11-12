@@ -2,8 +2,7 @@ mod chess_game;
 mod engine;
 
 use crate::chess_game::{ChessMove, Color, Game};
-use crate::engine::generate_move;
-use crate::engine::store::AlphaBetaStore;
+use crate::engine::{opening::OpeningBook, Engine};
 
 use clap::Parser;
 use std::io::{self, BufRead};
@@ -38,10 +37,11 @@ fn main() {
     let your_color = args.color;
     let opp_color = args.color.opposite();
 
-    let mut store = AlphaBetaStore::new();
+    let mut engine = Engine::new();
+    engine.opening_book = Some(OpeningBook::new());
 
     if your_color == Color::White {
-        let m = match generate_move(&game, &mut store, Color::White) {
+        let m = match engine.generate_move(&game, Color::White) {
             Some(m) => {
                 println!("{}", m);
                 m
@@ -76,7 +76,7 @@ fn main() {
                     return;
                 }
 
-                let m = match generate_move(&game, &mut store, your_color) {
+                let m = match engine.generate_move(&game, your_color) {
                     Some(m) => {
                         println!("{}", m);
                         m

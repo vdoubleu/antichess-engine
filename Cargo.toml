@@ -15,5 +15,9 @@ name = "antichess-engine"
 path = "src/main.rs"
 
 [[bin]]
+name = "opening-gen"
+path = "opening-gen/main.rs"
+
+[[bin]]
 name = "perft"
 path = "perft/main.rs"

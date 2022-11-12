@@ -14,3 +14,13 @@ python runmatch.py --white <WHITE_EXE_PATH> --black <BLACK_EXE_PATH>
 Running just `python runmatch.py` without any arguments will use the bots in the release build.
 
 You will probably want to capture stderr in a separate file by appending `2> <TEXT_FILE>` as to not show up with the output of the script.
+
+## Running the opening book generator
+
+Run 
+```
+cargo run --bin opening-gen
+```
+to generate the most up to date opening book.
+
+The repo should come with an existing up to date opening book, but if for some reason you need to recreate it, you can run that command.

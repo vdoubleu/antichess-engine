@@ -21,6 +21,11 @@ pub struct AlphaBetaStore {
     /// when the searching was started
     pub start_time: Option<Instant>,
 
+    /// the current reasonable depth when searching
+    /// we need to store this as well as the depth value inside
+    /// the params because of iterative deepening
+    pub curr_depth: i32,
+
     /// stores the transposition table
     pub transposition_table: HashMap<String, TranspositionTableEntry>,
 
@@ -31,6 +36,7 @@ impl AlphaBetaStore {
     pub fn new() -> Self {
         AlphaBetaStore {
             start_time: Some(Instant::now()),
+            curr_depth: 0,
             transposition_table: HashMap::new(),
             pv: Vec::new(),
         }
