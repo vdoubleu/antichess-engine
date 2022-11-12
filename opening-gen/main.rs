@@ -30,7 +30,7 @@ fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
 
         let best_move_option = engine.generate_move(game, game.player_turn);
 
-        if let Some(best_move) = best_move_option {
+        if let Ok(best_move) = best_move_option {
             store.insert(game.get_fen_notation(), best_move);
         } else {
             return;

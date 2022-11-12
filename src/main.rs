@@ -43,11 +43,12 @@ fn main() {
 
     if your_color == Color::White {
         let m = match engine.generate_move(&game, Color::White) {
-            Some(m) => {
+            Ok(m) => {
                 println!("{}", m);
                 m
             }
-            None => {
+            Err(e) => {
+                eprintln!("encountered error while generating move: {}", e);
                 println!("No moves available");
                 return;
             }
@@ -78,11 +79,12 @@ fn main() {
                 }
 
                 let m = match engine.generate_move(&game, your_color) {
-                    Some(m) => {
+                    Ok(m) => {
                         println!("{}", m);
                         m
                     }
-                    None => {
+                    Err(e) => {
+                        eprintln!("encountered error in move gen: {}", e);
                         println!("resign");
                         return;
                     }

@@ -10,6 +10,8 @@ use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::alpha_beta::alpha_beta;
 use crate::engine::opening::OpeningBook;
 use crate::engine::store::AlphaBetaStore;
+use crate::error::ChessError;
+
 use std::time::Duration;
 
 pub struct AlphaBetaParams {
@@ -30,11 +32,11 @@ pub struct AlphaBetaParams {
 impl Default for AlphaBetaParams {
     fn default() -> Self {
         AlphaBetaParams {
-            depth: 6,
-            max_depth: 16,
+            depth: 7,
+            max_depth: 20,
             null_move_reduction: 2,
             debug_print: 1,
-            max_time: Duration::from_secs(15),
+            max_time: Duration::from_secs(25),
         }
     }
 }
@@ -54,12 +56,12 @@ impl Engine {
         }
     }
 
-    pub fn generate_move(&mut self, game: &Game, color: Color) -> Option<ChessMove> {
+    pub fn generate_move(&mut self, game: &Game, color: Color) -> Result<ChessMove, ChessError> {
         // use opening book if available
         if game.turn_counter < 5 && self.opening_book.is_some() {
             let book: &OpeningBook = self.opening_book.as_ref().unwrap();
             if let Some(m) = book.get_move(&game.get_fen_notation()) {
-                return Some(m);
+                return Ok(m);
             }
         }
 
@@ -87,7 +89,7 @@ impl Engine {
                     break;
                 }
             } else {
-                panic!("start time not set");
+                return Err(ChessError::NoStartTime);
             }
 
             self.store.curr_depth = curr_depth;
@@ -101,16 +103,24 @@ impl Engine {
             }
         }
 
+        let search_time = self.store.start_time.unwrap().elapsed().as_millis();
+        self.store.total_search_time_ms += search_time;
+
         if self.params.debug_print > 0 {
             eprintln!(
-                "search time: {}",
-                self.store.start_time.unwrap().elapsed().as_millis()
+                "search time: {}, total_time: {}",
+                search_time,
+                self.store.total_search_time_ms
             );
         }
 
         self.store.end_turn();
 
-        best_move
+        if best_move.is_some() {
+            Ok(best_move.unwrap())
+        } else {
+            Err(ChessError::NoMoveGenerated)
+        }
     }
 }
 
@@ -137,7 +147,7 @@ mod gen_move_tests {
 
         let finish_time = curr_time.elapsed();
 
-        assert!(m.is_some());
+        assert!(m.is_ok());
 
         assert_eq!(
             m.unwrap(),

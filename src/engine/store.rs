@@ -30,6 +30,8 @@ pub struct AlphaBetaStore {
     pub transposition_table: HashMap<String, TranspositionTableEntry>,
 
     pub pv: Vec<ChessMove>,
+
+    pub total_search_time_ms: u128,
 }
 
 impl AlphaBetaStore {
@@ -39,6 +41,7 @@ impl AlphaBetaStore {
             curr_depth: 0,
             transposition_table: HashMap::new(),
             pv: Vec::new(),
+            total_search_time_ms: 0,
         }
     }
     pub fn store_transposition(
