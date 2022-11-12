@@ -1,5 +1,6 @@
 mod chess_game;
 mod engine;
+mod error;
 
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::{opening::OpeningBook, Engine};
