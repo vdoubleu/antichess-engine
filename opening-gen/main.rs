@@ -12,6 +12,9 @@ fn main() -> std::io::Result<()> {
 
     generate_opening_book(&mut opening_book);
 
+    // for the crate name, I suggest keeping "crate" here if you are not sure, but
+    // depending on where this opening code is getting called from, you may want to
+    // instead replace it with "antichess_engine"
     write_opening_book_to_file(&opening_book, "opening.rs", "crate")?;
 
     Ok(())

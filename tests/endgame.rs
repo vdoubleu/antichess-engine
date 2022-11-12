@@ -7,7 +7,7 @@ fn test_endgame() {
     let mut engine = Engine::new();
 
     let m = engine.generate_move(&game, Color::White);
-    assert!(m.is_some());
+    assert!(m.is_ok());
 
     let m = m.unwrap();
 
@@ -20,7 +20,7 @@ fn test_endgame_forcetake() {
     let mut engine = Engine::new();
 
     let m = engine.generate_move(&game, Color::White);
-    assert!(m.is_some());
+    assert!(m.is_ok());
 
     let m = m.unwrap();
 

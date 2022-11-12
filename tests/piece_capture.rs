@@ -45,19 +45,19 @@ fn test_en_passant_2() {
 
     let m = engine.generate_move(&game, game.player_turn);
 
-    assert!(m.is_some());
+    assert!(m.is_ok());
 
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b5"));
 
     let m = engine.generate_move(&game, game.player_turn);
 
-    assert!(m.is_some());
+    assert!(m.is_ok());
 
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("c7c5"));
 
     let m = engine.generate_move(&game, game.player_turn);
 
-    assert!(m.is_some());
+    assert!(m.is_ok());
 
     game.move_piece(&ChessMove::from_xboard_algebraic_notation("b5c6"));
 }
