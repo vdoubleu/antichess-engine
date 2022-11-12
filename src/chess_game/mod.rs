@@ -19,6 +19,8 @@ pub struct Game {
     pub winner: Option<Color>,
 
     pub undo_move_history: Vec<UndoMove>,
+
+    pub king_pos: [Pos; 2],
 }
 
 pub enum CastleTypes {
@@ -36,8 +38,8 @@ pub struct Piece {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, clap::ValueEnum)]
 pub enum Color {
-    Black,
-    White,
+    Black = 0,
+    White = 1,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]

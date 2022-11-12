@@ -10,7 +10,6 @@ default-run = "antichess-engine"
 clap = { version = "4.0.15", features = ["derive"] }
 rand = "0.8.4"
 
-
 [[bin]]
 name = "antichess-engine"
 path = "src/main.rs"
@@ -18,3 +17,7 @@ path = "src/main.rs"
 [[bin]]
 name = "opening-gen"
 path = "opening-gen/main.rs"
+
+[[bin]]
+name = "perft"
+path = "perft/main.rs"
