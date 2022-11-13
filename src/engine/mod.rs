@@ -27,6 +27,8 @@ pub struct AlphaBetaParams {
     pub debug_print: i8,
     /// the maximum amount of time to search for
     pub max_time: Duration,
+    /// handle the errors instead of panicing
+    pub handle_errors: bool,
 }
 
 impl Default for AlphaBetaParams {
@@ -37,6 +39,7 @@ impl Default for AlphaBetaParams {
             null_move_reduction: 2,
             debug_print: 1,
             max_time: Duration::from_secs(25),
+            handle_errors: true,
         }
     }
 }
@@ -88,15 +91,19 @@ impl Engine {
                     }
                     break;
                 }
-            } else {
+            } else if self.params.handle_errors {
                 return Err(ChessError::NoStartTime);
+            } else {
+                panic!("No start time");
             }
 
             self.store.curr_depth = curr_depth;
-            if let Some(res) = alpha_beta(game, color, self) {
+            if let Ok(res) = alpha_beta(game, color, self) {
                 best_move = Some(res.0);
                 best_score = res.1;
-            }
+            } else if !self.params.handle_errors {
+                panic!("Alpha beta error");
+            }  // else we just ignore the error and keep going
 
             if best_score == f64::INFINITY || best_score == f64::NEG_INFINITY {
                 break;
