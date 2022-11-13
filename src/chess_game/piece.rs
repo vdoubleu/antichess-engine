@@ -1,4 +1,5 @@
 use crate::chess_game::{Color, Piece, PieceType};
+use crate::error::ChessError;
 
 impl Piece {
     /// Creates a new Piece with a given color
@@ -8,7 +9,7 @@ impl Piece {
 
     /// Takes a character, and returns the corresponding piece
     /// It will take into account the case of the letter to determine the color
-    pub fn from_char(c: char) -> Piece {
+    pub fn from_char(c: char) -> Result<Piece, ChessError> {
         let piece_type = match c {
             'P' | 'p' => PieceType::Pawn,
             'R' | 'r' => PieceType::Rook,
@@ -16,7 +17,7 @@ impl Piece {
             'B' | 'b' => PieceType::Bishop,
             'Q' | 'q' => PieceType::Queen,
             'K' | 'k' => PieceType::King,
-            _ => panic!("Invalid piece type"),
+            _ => return Err(ChessError::InvalidPieceChar(c)),
         };
 
         let color = match c.is_uppercase() {
@@ -24,7 +25,7 @@ impl Piece {
             false => Color::Black,
         };
 
-        Piece::new(piece_type, color)
+        Ok(Piece::new(piece_type, color))
     }
 
     /// Takes a piece, and returns the corresponding character
@@ -80,54 +81,56 @@ mod piece_tests {
     use super::*;
 
     #[test]
-    fn test_from_char() {
-        let piece = Piece::from_char('P');
+    fn test_from_char() -> Result<(), ChessError> {
+        let piece = Piece::from_char('P')?;
         assert_eq!(piece.piece_type, PieceType::Pawn);
         assert_eq!(piece.color, Color::White);
 
-        let piece = Piece::from_char('p');
+        let piece = Piece::from_char('p')?;
         assert_eq!(piece.piece_type, PieceType::Pawn);
         assert_eq!(piece.color, Color::Black);
 
-        let piece = Piece::from_char('R');
+        let piece = Piece::from_char('R')?;
         assert_eq!(piece.piece_type, PieceType::Rook);
         assert_eq!(piece.color, Color::White);
 
-        let piece = Piece::from_char('r');
+        let piece = Piece::from_char('r')?;
         assert_eq!(piece.piece_type, PieceType::Rook);
         assert_eq!(piece.color, Color::Black);
 
-        let piece = Piece::from_char('N');
+        let piece = Piece::from_char('N')?;
         assert_eq!(piece.piece_type, PieceType::Knight);
         assert_eq!(piece.color, Color::White);
 
-        let piece = Piece::from_char('n');
+        let piece = Piece::from_char('n')?;
         assert_eq!(piece.piece_type, PieceType::Knight);
         assert_eq!(piece.color, Color::Black);
 
-        let piece = Piece::from_char('B');
+        let piece = Piece::from_char('B')?;
         assert_eq!(piece.piece_type, PieceType::Bishop);
         assert_eq!(piece.color, Color::White);
 
-        let piece = Piece::from_char('b');
+        let piece = Piece::from_char('b')?;
         assert_eq!(piece.piece_type, PieceType::Bishop);
         assert_eq!(piece.color, Color::Black);
 
-        let piece = Piece::from_char('Q');
+        let piece = Piece::from_char('Q')?;
         assert_eq!(piece.piece_type, PieceType::Queen);
         assert_eq!(piece.color, Color::White);
 
-        let piece = Piece::from_char('q');
+        let piece = Piece::from_char('q')?;
         assert_eq!(piece.piece_type, PieceType::Queen);
         assert_eq!(piece.color, Color::Black);
 
-        let piece = Piece::from_char('K');
+        let piece = Piece::from_char('K')?;
         assert_eq!(piece.piece_type, PieceType::King);
         assert_eq!(piece.color, Color::White);
 
-        let piece = Piece::from_char('k');
+        let piece = Piece::from_char('k')?;
         assert_eq!(piece.piece_type, PieceType::King);
         assert_eq!(piece.color, Color::Black);
+
+        Ok(())
     }
 
     #[test]

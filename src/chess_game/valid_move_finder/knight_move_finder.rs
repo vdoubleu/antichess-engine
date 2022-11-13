@@ -26,9 +26,11 @@ pub fn all_valid_moves_for_knight(game: &Game, pos: Pos, color: Color) -> Vec<Po
 mod knight_tests {
     use super::*;
 
+    use crate::error::ChessError;
+
     #[test]
-    fn test_valid_moves() {
-        let game = Game::from_fen_notation("8/8/8/8/3N4/8/8/8");
+    fn test_valid_moves() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("8/8/8/8/3N4/8/8/8")?;
         let knight_pos = Pos::from_alg_notation("d4");
 
         let valid_moves = all_valid_moves_for_knight(&game, knight_pos, Color::White);
@@ -49,5 +51,7 @@ mod knight_tests {
         for expected_move in expected_moves {
             assert!(valid_moves.contains(&expected_move));
         }
+
+        Ok(())
     }
 }

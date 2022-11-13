@@ -8,7 +8,11 @@ use crate::error::ChessError;
 
 /// Implements the min max algorithm (without alpha beta pruning for now) to decide the best move
 /// to play. White is maximizing, black is minimizing.
-pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(ChessMove, f64), ChessError> {
+pub fn alpha_beta(
+    game: &Game,
+    color: Color,
+    engine: &mut Engine,
+) -> Result<(ChessMove, f64), ChessError> {
     let reasonable_depth = engine.store.curr_depth;
     let max_depth = engine.params.max_depth;
 
@@ -294,8 +298,8 @@ mod alpha_beta_tests {
     }
 
     #[test]
-    fn white_makes_better_move() {
-        let game = Game::from_fen_notation("7k/8/8/3q1n2/4P3/8/8/7K");
+    fn white_makes_better_move() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("7k/8/8/3q1n2/4P3/8/8/7K")?;
         let mut engine = Engine::new();
         engine.store.curr_depth = engine.params.depth;
 
@@ -303,7 +307,7 @@ mod alpha_beta_tests {
         assert!(move1_option.is_ok());
 
         let move1 = move1_option.unwrap().0;
-        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e4d5"));
+        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e4d5")?);
 
         // try again with a alpha beta depth of 3
         let mut engine2 = Engine::new();
@@ -313,22 +317,24 @@ mod alpha_beta_tests {
         assert!(move2_option.is_ok());
 
         let move2 = move2_option.unwrap().0;
-        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e4d5"));
+        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e4d5")?);
+
+        Ok(())
     }
 
     #[test]
-    fn black_makes_better_move() {
-        let mut game = Game::from_fen_notation("7k/8/4p3/3Q1N2/8/8/1P6/7K");
+    fn black_makes_better_move() -> Result<(), ChessError> {
+        let mut game = Game::from_fen_notation("7k/8/4p3/3Q1N2/8/8/1P6/7K")?;
         let mut engine = Engine::new();
         engine.store.curr_depth = engine.params.depth;
 
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b2b4"));
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b2b4")?);
 
         let move1_option = alpha_beta(&game, Color::Black, &mut engine);
         assert!(move1_option.is_ok());
 
         let move1 = move1_option.unwrap().0;
-        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e6d5"));
+        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e6d5")?);
 
         // try again with a alpha beta depth of 3
         let mut engine2 = Engine::new();
@@ -336,6 +342,8 @@ mod alpha_beta_tests {
         assert!(move2_option.is_ok());
 
         let move2 = move2_option.unwrap().0;
-        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e6d5"));
+        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e6d5")?);
+
+        Ok(())
     }
 }

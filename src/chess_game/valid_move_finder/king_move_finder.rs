@@ -147,9 +147,11 @@ fn has_no_pieces_between(game: &Game, start_pos: Pos, end_pos: Pos) -> bool {
 mod test_king {
     use super::*;
 
+    use crate::error::ChessError;
+
     #[test]
-    fn test_king_move() {
-        let mut game = Game::from_fen_notation("8/8/8/8/3k4/8/8/8");
+    fn test_king_move() -> Result<(), ChessError> {
+        let mut game = Game::from_fen_notation("8/8/8/8/3k4/8/8/8")?;
         game.castle_availability = [false; 4];
 
         let king_pos = Pos::from_alg_notation("d4");
@@ -157,11 +159,13 @@ mod test_king {
         let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
 
         assert_eq!(valid_moves.len(), 8);
+
+        Ok(())
     }
 
     #[test]
-    fn test_castle() {
-        let game = Game::from_fen_notation("r3k2r/8/8/8/8/8/8/8");
+    fn test_castle() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("r3k2r/8/8/8/8/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
         let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
@@ -169,11 +173,13 @@ mod test_king {
         assert_eq!(valid_moves.len(), 7);
         assert!(valid_moves.contains(&Pos::from_alg_notation("c8")));
         assert!(valid_moves.contains(&Pos::from_alg_notation("g8")));
+
+        Ok(())
     }
 
     #[test]
-    fn test_castle_block() {
-        let game = Game::from_fen_notation("rn2k1nr/8/8/8/8/8/8/8");
+    fn test_castle_block() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("rn2k1nr/8/8/8/8/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
         let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
@@ -181,11 +187,13 @@ mod test_king {
         assert_eq!(valid_moves.len(), 5);
         assert!(!valid_moves.contains(&Pos::from_alg_notation("c8")));
         assert!(!valid_moves.contains(&Pos::from_alg_notation("g8")));
+
+        Ok(())
     }
 
     #[test]
-    fn test_castle_king_check() {
-        let game = Game::from_fen_notation("r3k2r/8/2B5/8/8/8/8/8");
+    fn test_castle_king_check() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("r3k2r/8/2B5/8/8/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
         let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
@@ -193,11 +201,13 @@ mod test_king {
         assert_eq!(valid_moves.len(), 5);
         assert!(!valid_moves.contains(&Pos::from_alg_notation("c8")));
         assert!(!valid_moves.contains(&Pos::from_alg_notation("g8")));
+
+        Ok(())
     }
 
     #[test]
-    fn test_castle_king_through_check() {
-        let game = Game::from_fen_notation("r3k2r/8/8/8/2B2B2/8/8/8");
+    fn test_castle_king_through_check() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("r3k2r/8/8/8/2B2B2/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
         let valid_moves = all_valid_moves_for_king(&game, king_pos, Color::Black, false);
@@ -205,5 +215,7 @@ mod test_king {
         assert_eq!(valid_moves.len(), 6);
         assert!(valid_moves.contains(&Pos::from_alg_notation("c8")));
         assert!(!valid_moves.contains(&Pos::from_alg_notation("g8")));
+
+        Ok(())
     }
 }

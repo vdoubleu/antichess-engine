@@ -90,16 +90,18 @@ fn score_captures(game: &Game, move_list: &mut [(&ChessMove, f64)]) {
 mod sort_tests {
     use super::*;
 
+    use crate::error::ChessError;
+
     #[test]
-    fn test_sort() {
-        let game = Game::from_fen_notation("8/8/3p4/2r3k1/4N3/2n3q1/8/8");
+    fn test_sort() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("8/8/3p4/2r3k1/4N3/2n3q1/8/8")?;
 
         let mut move_list = vec![
-            ChessMove::from_xboard_algebraic_notation("e4d6"),
-            ChessMove::from_xboard_algebraic_notation("e4g3"),
-            ChessMove::from_xboard_algebraic_notation("e4g5"),
-            ChessMove::from_xboard_algebraic_notation("e4c3"),
-            ChessMove::from_xboard_algebraic_notation("e4c5"),
+            ChessMove::from_xboard_algebraic_notation("e4d6")?,
+            ChessMove::from_xboard_algebraic_notation("e4g3")?,
+            ChessMove::from_xboard_algebraic_notation("e4g5")?,
+            ChessMove::from_xboard_algebraic_notation("e4c3")?,
+            ChessMove::from_xboard_algebraic_notation("e4c5")?,
         ];
 
         let store = AlphaBetaStore::new();
@@ -108,23 +110,25 @@ mod sort_tests {
 
         assert_eq!(
             move_list[0],
-            ChessMove::from_xboard_algebraic_notation("e4g5")
+            ChessMove::from_xboard_algebraic_notation("e4g5")?
         );
         assert_eq!(
             move_list[1],
-            ChessMove::from_xboard_algebraic_notation("e4g3")
+            ChessMove::from_xboard_algebraic_notation("e4g3")?
         );
         assert_eq!(
             move_list[2],
-            ChessMove::from_xboard_algebraic_notation("e4c5")
+            ChessMove::from_xboard_algebraic_notation("e4c5")?
         );
         assert_eq!(
             move_list[3],
-            ChessMove::from_xboard_algebraic_notation("e4c3")
+            ChessMove::from_xboard_algebraic_notation("e4c3")?
         );
         assert_eq!(
             move_list[4],
-            ChessMove::from_xboard_algebraic_notation("e4d6")
+            ChessMove::from_xboard_algebraic_notation("e4d6")?
         );
+
+        Ok(())
     }
 }

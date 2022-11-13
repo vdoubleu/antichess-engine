@@ -103,7 +103,7 @@ impl Engine {
                 best_score = res.1;
             } else if !self.params.handle_errors {
                 panic!("Alpha beta error");
-            }  // else we just ignore the error and keep going
+            } // else we just ignore the error and keep going
 
             if best_score == f64::INFINITY || best_score == f64::NEG_INFINITY {
                 break;
@@ -122,8 +122,8 @@ impl Engine {
 
         self.store.end_turn();
 
-        if best_move.is_some() {
-            Ok(best_move.unwrap())
+        if let Some(best_move_res) = best_move {
+            Ok(best_move_res)
         } else {
             Err(ChessError::NoMoveGenerated)
         }

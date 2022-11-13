@@ -1,12 +1,14 @@
 use antichess_engine::chess_game::{ChessMove, Color, Game};
 
+use antichess_engine::error::ChessError;
+
 enum MoveDirection {
     Forward,
     Backward,
 }
 
 #[test]
-fn test_unmove_piece_basic() {
+fn test_unmove_piece_basic() -> Result<(), ChessError> {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> = vec![
@@ -24,7 +26,7 @@ fn test_unmove_piece_basic() {
     let mut undo_count = 0;
 
     for m in &moves_strings {
-        let curr_move = ChessMove::from_xboard_algebraic_notation(&m);
+        let curr_move = ChessMove::from_xboard_algebraic_notation(&m)?;
         game.move_piece(&curr_move);
         undo_count += 1;
     }
@@ -37,10 +39,12 @@ fn test_unmove_piece_basic() {
         game.get_fen_notation(),
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
     );
+
+    Ok(())
 }
 
 #[test]
-fn test_unmove_piece_remake_repeat() {
+fn test_unmove_piece_remake_repeat() -> Result<(), ChessError> {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> = vec![
@@ -68,7 +72,7 @@ fn test_unmove_piece_remake_repeat() {
         match m {
             MoveDirection::Forward => {
                 let curr_move =
-                    ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+                    ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
                 println!("Making move: {:?}", curr_move);
                 game.move_piece(&curr_move);
                 curr_move_id += 1;
@@ -80,10 +84,12 @@ fn test_unmove_piece_remake_repeat() {
         }
         eprintln!("{} ", &game);
     }
+
+    Ok(())
 }
 
 #[test]
-fn test_unmove_piece_remake_repeat_2() {
+fn test_unmove_piece_remake_repeat_2() -> Result<(), ChessError> {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> =
@@ -92,17 +98,17 @@ fn test_unmove_piece_remake_repeat_2() {
     let mut curr_move_id = 0;
 
     // white moves pawn
-    let curr_move_1 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+    let curr_move_1 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
     game.move_piece(&curr_move_1);
     curr_move_id += 1;
 
     // black moves knight
-    let curr_move_2 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+    let curr_move_2 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
     game.move_piece(&curr_move_2);
     curr_move_id += 1;
 
     // white moves pawn
-    let curr_move_3 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id]);
+    let curr_move_3 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
 
     game.move_piece(&curr_move_3);
 
@@ -114,12 +120,12 @@ fn test_unmove_piece_remake_repeat_2() {
     assert!(
         white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
             &"a3a4".to_string()
-        ))
+        )?)
     );
     assert!(
         !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
             &"a3a5".to_string()
-        ))
+        )?)
     );
 
     // black undoes knight move
@@ -128,25 +134,27 @@ fn test_unmove_piece_remake_repeat_2() {
     // black tries new knight move
     game.move_piece(&ChessMove::from_xboard_algebraic_notation(
         &"b8a6".to_string(),
-    ));
+    )?);
 
     assert!(
         white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
             &"a3a4".to_string()
-        ))
+        )?)
     );
     assert!(
         !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
             &"a3a5".to_string()
-        ))
+        )?)
     );
+
+    Ok(())
 }
 
 #[test]
-fn test_pawn_promotion_while_take_then_undo() {
-    let mut game = Game::from_fen_notation("6n1/7P/8/8/8/8/8/8");
+fn test_pawn_promotion_while_take_then_undo() -> Result<(), ChessError> {
+    let mut game = Game::from_fen_notation("6n1/7P/8/8/8/8/8/8")?;
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r"));
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r")?);
 
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8 b");
@@ -155,4 +163,6 @@ fn test_pawn_promotion_while_take_then_undo() {
 
     assert_eq!(game.player_turn, Color::White);
     assert_eq!(game.get_fen_notation(), "6n1/7P/8/8/8/8/8/8 w");
+
+    Ok(())
 }

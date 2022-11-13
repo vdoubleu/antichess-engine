@@ -5,6 +5,8 @@ mod error;
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::{opening::OpeningBook, Engine};
 
+use anyhow::Context;
+
 use clap::Parser;
 use std::io::{self, BufRead};
 
@@ -15,7 +17,7 @@ struct Args {
     #[clap(value_enum, default_value = "white")]
     color: Color,
 
-    /// Debug level, 0, 1, or 2
+    /// Debug level, -1, 0, 1, or 2
     #[clap(short, long, default_value = "0")]
     debug: i8,
 }
@@ -69,7 +71,11 @@ fn main() {
     for line in stdin.lock().lines() {
         match line {
             Ok(line) => {
-                let opponent_move = ChessMove::from_xboard_algebraic_notation(&line);
+                // we can just error if we can't parse move because we assume the opponent always
+                // returns valid moves. If they don't, we'll just error out.
+                let opponent_move = ChessMove::from_xboard_algebraic_notation(&line)
+                    .context("opponent inputted invalid move in main")
+                    .unwrap();
                 game.move_piece(&opponent_move);
 
                 if let Some(winner) = game.winner {

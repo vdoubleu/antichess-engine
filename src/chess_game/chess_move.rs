@@ -1,5 +1,6 @@
 use crate::chess_game::pos::PosExt;
 use crate::chess_game::{ChessMove, Game, Piece, PieceType, Pos};
+use crate::error::ChessError;
 
 impl ChessMove {
     /// Creates a ChessMove
@@ -42,16 +43,16 @@ impl ChessMove {
     }
 
     /// Creates a ChessMove from xboard algebraic notation
-    pub fn from_xboard_algebraic_notation(s: &str) -> ChessMove {
+    pub fn from_xboard_algebraic_notation(s: &str) -> Result<ChessMove, ChessError> {
         let start_pos = Pos::from_alg_notation(&s[0..2]);
         let end_pos = Pos::from_alg_notation(&s[2..4]);
         let promotion = if s.len() == 5 {
-            Some(Piece::from_char(s[4..5].chars().next().unwrap()).piece_type)
+            Some(Piece::from_char(s[4..5].chars().next().unwrap())?.piece_type)
         } else {
             None
         };
 
-        ChessMove::new(start_pos, end_pos, promotion)
+        Ok(ChessMove::new(start_pos, end_pos, promotion))
     }
 
     pub fn is_en_passant(&self, game: &Game) -> bool {

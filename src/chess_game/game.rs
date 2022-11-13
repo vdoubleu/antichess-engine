@@ -6,6 +6,8 @@ use crate::chess_game::valid_move_finder::{
 use crate::chess_game::{
     promotable_pieces, CastleTypes, ChessMove, Color, Game, Piece, PieceType, Pos, UndoMove,
 };
+use crate::error::ChessError;
+
 use std::fmt;
 
 impl Game {
@@ -74,7 +76,7 @@ impl Game {
         self.board[pos]
     }
 
-    pub fn from_fen_notation(fen_str: &str) -> Game {
+    pub fn from_fen_notation(fen_str: &str) -> Result<Game, ChessError> {
         let mut game = Game::new();
 
         let mut curr_board_pos = 21;
@@ -84,18 +86,20 @@ impl Game {
             } else if c.is_ascii_digit() {
                 curr_board_pos += c.to_digit(10).unwrap() as usize;
             } else {
-                let piece = Piece::from_char(c);
+                let piece = Piece::from_char(c)?;
                 game.add_piece(&piece, curr_board_pos);
                 curr_board_pos += 1;
             }
         }
 
-        game
+        Ok(game)
     }
 
     /// Creates a new game with the starting board
     pub fn new_starting_game() -> Game {
-        Game::from_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+        // i feel like we can just panic here if we can't even create a new starting game
+        // our tests should catch this
+        Game::from_fen_notation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").unwrap()
     }
 
     pub fn get_all_piece_pos(&self) -> Vec<Pos> {
@@ -632,14 +636,14 @@ mod game_tests {
     }
 
     #[test]
-    fn test_unmake_en_passant() {
+    fn test_unmake_en_passant() -> Result<(), ChessError> {
         let mut game = Game::new_starting_game();
 
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e2e4"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b8c6"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e4e5"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("d7d5"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e5e6"));
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e2e4")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b8c6")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e4e5")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("d7d5")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e5e6")?);
 
         game.unmove_move();
         game.unmove_move();
@@ -648,16 +652,18 @@ mod game_tests {
             game.get_fen_notation(),
             "r1bqkbnr/pppppppp/2n5/4P3/8/8/PPPP1PPP/RNBQKBNR b"
         );
+
+        Ok(())
     }
 
     #[test]
-    fn test_pawn_take_unmake() {
+    fn test_pawn_take_unmake() -> Result<(), ChessError> {
         let mut game = Game::new_starting_game();
 
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a2a4"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b7b5"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b5"));
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a7a5"));
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a2a4")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b7b5")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b5")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a7a5")?);
 
         game.unmove_move();
         game.unmove_move();
@@ -668,5 +674,7 @@ mod game_tests {
             game.get_fen_notation(),
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
+
+        Ok(())
     }
 }

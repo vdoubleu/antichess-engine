@@ -91,9 +91,11 @@ fn is_en_passant(game: &Game, pawn_curr_pos: Pos, move_pos: Pos) -> bool {
 mod pawn_tests {
     use super::*;
 
+    use crate::error::ChessError;
+
     #[test]
-    fn test_valid_pawn_moves_black() {
-        let game = Game::from_fen_notation("8/5p2/4P1P1/8/8/8/8/8");
+    fn test_valid_pawn_moves_black() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("8/5p2/4P1P1/8/8/8/8/8")?;
         let pos = Pos::new(1, 5);
 
         let valid_moves = all_valid_moves_for_pawn(&game, pos, Color::Black, false);
@@ -106,11 +108,13 @@ mod pawn_tests {
 
         eprintln!("{:?}", valid_moves);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
+
+        Ok(())
     }
 
     #[test]
-    fn test_valid_pawn_moves_white() {
-        let game = Game::from_fen_notation("8/8/8/8/8/4p1p1/5P2/8");
+    fn test_valid_pawn_moves_white() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("8/8/8/8/8/4p1p1/5P2/8")?;
         let pos = Pos::new(6, 5);
 
         let valid_moves = all_valid_moves_for_pawn(&game, pos, Color::White, false);
@@ -123,11 +127,13 @@ mod pawn_tests {
 
         eprintln!("{:?}", valid_moves);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
+
+        Ok(())
     }
 
     #[test]
-    fn test_starting_double_move() {
-        let game = Game::from_fen_notation("8/8/8/8/8/8/4P3/8");
+    fn test_starting_double_move() -> Result<(), ChessError> {
+        let game = Game::from_fen_notation("8/8/8/8/8/8/4P3/8")?;
         let pos = Pos::new(6, 4);
 
         let valid_moves = all_valid_moves_for_pawn(&game, pos, Color::White, false);
@@ -136,5 +142,7 @@ mod pawn_tests {
         eprintln!("{:?}", valid_moves);
         assert_eq!(valid_moves.len(), 2);
         assert!(valid_moves.iter().all(|m| expected_moves.contains(m)));
+
+        Ok(())
     }
 }

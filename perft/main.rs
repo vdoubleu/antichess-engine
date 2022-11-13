@@ -59,7 +59,7 @@ fn perft_test(
     check_only_total: bool,
     expected_castles: Vec<usize>,
 ) {
-    let mut game = Game::from_fen_notation(fen);
+    let mut game = Game::from_fen_notation(fen).unwrap();
 
     println!("{}", game);
 
