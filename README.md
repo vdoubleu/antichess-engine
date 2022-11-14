@@ -66,15 +66,10 @@ Everything should pass. If something doesn't pass, then go fix it.
 
 
 ## TODO list
-- when error encountered for move gen, try gen on smaller depth, or resort to random move
-- handle error in piece move
-
 - perft sketchy en passant pos
 
 - king safety evaluation
 
 - dynamic search depth / search time
-
-- gen opening book for first moves for either side
 
 - 50 move draw, draw by repetition

@@ -55,8 +55,8 @@ fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
         }
     }
 
-    let recursion_depth = 4;
-    let reasonable_search_depth = 6;
+    let recursion_depth = 3;
+    let reasonable_search_depth = 7;
     let timeout = 60; // in seconds
 
     let mut game = Game::new_starting_game();
