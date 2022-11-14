@@ -9,8 +9,11 @@ pub mod store;
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::alpha_beta::alpha_beta;
 use crate::engine::opening::OpeningBook;
+use crate::engine::random::random_move;
 use crate::engine::store::AlphaBetaStore;
 use crate::error::ChessError;
+
+use anyhow::Result;
 
 use std::time::Duration;
 
@@ -38,7 +41,7 @@ impl Default for AlphaBetaParams {
             max_depth: 20,
             null_move_reduction: 2,
             debug_print: 1,
-            max_time: Duration::from_secs(25),
+            max_time: Duration::from_secs(20),
             handle_errors: true,
         }
     }
@@ -59,7 +62,7 @@ impl Engine {
         }
     }
 
-    pub fn generate_move(&mut self, game: &Game, color: Color) -> Result<ChessMove, ChessError> {
+    pub fn generate_move(&mut self, game: &Game, color: Color) -> Result<ChessMove> {
         // use opening book if available
         if game.turn_counter < 5 && self.opening_book.is_some() {
             let book: &OpeningBook = self.opening_book.as_ref().unwrap();
@@ -92,7 +95,7 @@ impl Engine {
                     break;
                 }
             } else if self.params.handle_errors {
-                return Err(ChessError::NoStartTime);
+                return Err(ChessError::NoStartTime.into());
             } else {
                 panic!("No start time");
             }
@@ -125,8 +128,12 @@ impl Engine {
         if let Some(best_move_res) = best_move {
             Ok(best_move_res)
         } else {
-            Err(ChessError::NoMoveGenerated)
+            Err(ChessError::NoMoveGenerated.into())
         }
+    }
+
+    pub fn generate_rand_move(&self, game: &Game, color: Color) -> Result<ChessMove> {
+        random_move(game, color)
     }
 }
 

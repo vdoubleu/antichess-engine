@@ -147,10 +147,10 @@ fn has_no_pieces_between(game: &Game, start_pos: Pos, end_pos: Pos) -> bool {
 mod test_king {
     use super::*;
 
-    use crate::error::ChessError;
+    use anyhow::Result;
 
     #[test]
-    fn test_king_move() -> Result<(), ChessError> {
+    fn test_king_move() -> Result<()> {
         let mut game = Game::from_fen_notation("8/8/8/8/3k4/8/8/8")?;
         game.castle_availability = [false; 4];
 
@@ -164,7 +164,7 @@ mod test_king {
     }
 
     #[test]
-    fn test_castle() -> Result<(), ChessError> {
+    fn test_castle() -> Result<()> {
         let game = Game::from_fen_notation("r3k2r/8/8/8/8/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
@@ -178,7 +178,7 @@ mod test_king {
     }
 
     #[test]
-    fn test_castle_block() -> Result<(), ChessError> {
+    fn test_castle_block() -> Result<()> {
         let game = Game::from_fen_notation("rn2k1nr/8/8/8/8/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
@@ -192,7 +192,7 @@ mod test_king {
     }
 
     #[test]
-    fn test_castle_king_check() -> Result<(), ChessError> {
+    fn test_castle_king_check() -> Result<()> {
         let game = Game::from_fen_notation("r3k2r/8/2B5/8/8/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 
@@ -206,7 +206,7 @@ mod test_king {
     }
 
     #[test]
-    fn test_castle_king_through_check() -> Result<(), ChessError> {
+    fn test_castle_king_through_check() -> Result<()> {
         let game = Game::from_fen_notation("r3k2r/8/8/8/2B2B2/8/8/8")?;
         let king_pos = Pos::from_alg_notation("e8");
 

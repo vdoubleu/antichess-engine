@@ -16,4 +16,7 @@ pub enum ChessError {
     NoMoveGenerated,
     #[error("no valid moves to try")]
     NoValidMoves,
+
+    #[error("no rook at expected column(s)")]
+    NoRookAtExpectedColumn,
 }

@@ -1,6 +1,8 @@
 use crate::chess_game::{Color, Piece, PieceType};
 use crate::error::ChessError;
 
+use anyhow::Result;
+
 impl Piece {
     /// Creates a new Piece with a given color
     pub fn new(piece_type: PieceType, color: Color) -> Piece {
@@ -9,7 +11,7 @@ impl Piece {
 
     /// Takes a character, and returns the corresponding piece
     /// It will take into account the case of the letter to determine the color
-    pub fn from_char(c: char) -> Result<Piece, ChessError> {
+    pub fn from_char(c: char) -> Result<Piece> {
         let piece_type = match c {
             'P' | 'p' => PieceType::Pawn,
             'R' | 'r' => PieceType::Rook,
@@ -17,7 +19,7 @@ impl Piece {
             'B' | 'b' => PieceType::Bishop,
             'Q' | 'q' => PieceType::Queen,
             'K' | 'k' => PieceType::King,
-            _ => return Err(ChessError::InvalidPieceChar(c)),
+            _ => return Err(ChessError::InvalidPieceChar(c).into()),
         };
 
         let color = match c.is_uppercase() {
@@ -81,7 +83,7 @@ mod piece_tests {
     use super::*;
 
     #[test]
-    fn test_from_char() -> Result<(), ChessError> {
+    fn test_from_char() -> Result<()> {
         let piece = Piece::from_char('P')?;
         assert_eq!(piece.piece_type, PieceType::Pawn);
         assert_eq!(piece.color, Color::White);

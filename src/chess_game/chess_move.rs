@@ -1,6 +1,7 @@
 use crate::chess_game::pos::PosExt;
 use crate::chess_game::{ChessMove, Game, Piece, PieceType, Pos};
-use crate::error::ChessError;
+
+use anyhow::Result;
 
 impl ChessMove {
     /// Creates a ChessMove
@@ -43,7 +44,7 @@ impl ChessMove {
     }
 
     /// Creates a ChessMove from xboard algebraic notation
-    pub fn from_xboard_algebraic_notation(s: &str) -> Result<ChessMove, ChessError> {
+    pub fn from_xboard_algebraic_notation(s: &str) -> Result<ChessMove> {
         let start_pos = Pos::from_alg_notation(&s[0..2]);
         let end_pos = Pos::from_alg_notation(&s[2..4]);
         let promotion = if s.len() == 5 {

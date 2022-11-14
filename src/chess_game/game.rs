@@ -8,6 +8,8 @@ use crate::chess_game::{
 };
 use crate::error::ChessError;
 
+use anyhow::{Context, Result};
+
 use std::fmt;
 
 impl Game {
@@ -31,18 +33,16 @@ impl Game {
 
     /// Adds a piece at a given square. Not sure why exactly you would want this...
     /// This is mostly for internal use when creating a new game
-    pub fn add_piece(&mut self, piece: &Piece, pos: Pos) -> &mut Self {
+    pub fn add_piece(&mut self, piece: &Piece, pos: Pos) {
         self.board[pos] = Some(*piece);
 
         if piece.piece_type == PieceType::King {
             self.king_pos[piece.color as usize] = pos;
         }
-
-        self
     }
 
     /// Removes a piece at a given square.
-    pub fn remove_piece(&mut self, pos: Pos) -> &mut Self {
+    pub fn remove_piece(&mut self, pos: Pos) {
         if let Some(piece) = self.board[pos] {
             if piece.piece_type == PieceType::King {
                 self.king_pos[piece.color as usize] = Pos::new(0, 0);
@@ -50,11 +50,10 @@ impl Game {
         }
 
         self.board[pos] = None;
-        self
     }
 
     /// Relocates a piece from one square to another
-    pub fn relocate_piece(&mut self, start_pos: Pos, end_pos: Pos) -> &mut Self {
+    pub fn relocate_piece(&mut self, start_pos: Pos, end_pos: Pos) -> Result<()> {
         if let Some(piece) = self.board[start_pos] {
             self.board[end_pos] = Some(piece);
             self.board[start_pos] = None;
@@ -66,17 +65,17 @@ impl Game {
             eprintln!("{}", self);
             eprintln!("{}", self.get_fen_notation());
             eprintln!("start_pos: {}, end_pos: {}", start_pos, end_pos);
-            panic!("No piece at start_pos {}", start_pos);
+            return Err(ChessError::NoPieceAtPos(start_pos).into());
         }
 
-        self
+        Ok(())
     }
 
     pub fn get_piece(&self, pos: Pos) -> Option<Piece> {
         self.board[pos]
     }
 
-    pub fn from_fen_notation(fen_str: &str) -> Result<Game, ChessError> {
+    pub fn from_fen_notation(fen_str: &str) -> Result<Game> {
         let mut game = Game::new();
 
         let mut curr_board_pos = 21;
@@ -178,7 +177,7 @@ impl Game {
     }
 
     /// Returns all the valid moves for the piece at the given position
-    pub fn valid_moves_for_piece(&self, pos: Pos) -> Vec<Pos> {
+    pub fn valid_moves_for_piece(&self, pos: Pos) -> Result<Vec<Pos>> {
         self.valid_moves_for_piece_impl(pos, false)
     }
 
@@ -186,24 +185,24 @@ impl Game {
         &self,
         pos: Pos,
         only_check_currently_attacking: bool,
-    ) -> Vec<Pos> {
-        if let Some(piece) = self.get_piece(pos) {
-            let piece_color = piece.color;
-            match piece.piece_type {
-                PieceType::Pawn => {
-                    all_pawn_moves(self, pos, piece_color, only_check_currently_attacking)
-                }
-                PieceType::Knight => all_knight_moves(self, pos, piece_color),
-                PieceType::Bishop => all_bishop_moves(self, pos, piece_color),
-                PieceType::Rook => all_rook_moves(self, pos, piece_color),
-                PieceType::Queen => all_queen_moves(self, pos, piece_color),
-                PieceType::King => {
-                    all_king_moves(self, pos, piece_color, only_check_currently_attacking)
-                }
+    ) -> Result<Vec<Pos>> {
+        let piece = self.get_piece(pos).ok_or(ChessError::NoPieceAtPos(pos))?;
+
+        let piece_color = piece.color;
+        let moves = match piece.piece_type {
+            PieceType::Pawn => {
+                all_pawn_moves(self, pos, piece_color, only_check_currently_attacking)
             }
-        } else {
-            panic!("no piece at pos");
-        }
+            PieceType::Knight => all_knight_moves(self, pos, piece_color),
+            PieceType::Bishop => all_bishop_moves(self, pos, piece_color),
+            PieceType::Rook => all_rook_moves(self, pos, piece_color),
+            PieceType::Queen => all_queen_moves(self, pos, piece_color),
+            PieceType::King => {
+                all_king_moves(self, pos, piece_color, only_check_currently_attacking)
+            }
+        };
+
+        Ok(moves)
     }
 
     /// Returns a vector of all the valid moves for the color
@@ -226,21 +225,24 @@ impl Game {
     /// Returns a vector of all the valid moves for a color, regardless of whether they take or not
     /// or not. Remove moves that put the king in check
     #[allow(dead_code)]
-    pub fn all_valid_moves_for_color_perft(&self, color: Color) -> Vec<ChessMove> {
+    pub fn all_valid_moves_for_color_perft(&self, color: Color) -> Result<Vec<ChessMove>> {
         let all_valid_moves = self.all_valid_moves_for_color_impl(color, false);
 
         let king_safe_moves = all_valid_moves
             .iter()
             .filter(|m| {
                 let mut game_copy = self.clone();
-                game_copy.move_piece(m);
-                !game_copy
-                    .square_attacked_by_color(game_copy.king_pos[color as usize], color.opposite())
+                let move_res = game_copy.move_piece(m);
+                move_res.is_ok()
+                    && !game_copy.square_attacked_by_color(
+                        game_copy.king_pos[color as usize],
+                        color.opposite(),
+                    )
             })
             .copied()
             .collect::<Vec<ChessMove>>();
 
-        king_safe_moves
+        Ok(king_safe_moves)
     }
 
     pub fn is_move_that_takes(&self, m: &ChessMove, color: Color) -> bool {
@@ -263,8 +265,14 @@ impl Game {
         for from_pos in self.get_all_piece_pos() {
             let piece = self.get_piece(from_pos).unwrap();
             if piece.color == color {
-                let valid_moves =
+                let valid_moves_res =
                     self.valid_moves_for_piece_impl(from_pos, only_check_currently_attacking);
+
+                if valid_moves_res.is_err() {
+                    continue;
+                }
+
+                let valid_moves = valid_moves_res.unwrap();
 
                 for to_pos in valid_moves {
                     let to_row = to_pos.row();
@@ -290,7 +298,14 @@ impl Game {
     pub fn move_is_valid(&self, from: Pos, to: Pos) -> bool {
         if let Some(piece) = self.board[from] {
             if piece.color == self.player_turn {
-                let valid_to_pos = self.valid_moves_for_piece_impl(from, false);
+                let valid_to_pos_res = self.valid_moves_for_piece_impl(from, false);
+
+                if valid_to_pos_res.is_err() {
+                    return false;
+                }
+
+                let valid_to_pos = valid_to_pos_res.unwrap();
+
                 for m in valid_to_pos {
                     if m == to {
                         return true;
@@ -305,7 +320,7 @@ impl Game {
     }
 
     // moves a piece from one position to another
-    pub fn move_piece(&mut self, chess_move: &ChessMove) -> &mut Self {
+    pub fn move_piece(&mut self, chess_move: &ChessMove) -> Result<()> {
         if chess_move.is_null_move {
             self.player_turn = self.player_turn.opposite();
             self.turn_counter += 1;
@@ -313,7 +328,7 @@ impl Game {
             let move_undoer = UndoMove::new(self, chess_move);
             self.undo_move_history.push(move_undoer);
 
-            return self;
+            return Ok(());
         }
 
         // check move is valid
@@ -321,7 +336,11 @@ impl Game {
             eprintln!("{}", self);
             eprintln!("{}", self.get_fen_notation());
             eprintln!("invalid move: {} {:?}", chess_move, chess_move);
-            panic!("Invalid move");
+            eprintln!(
+                "valid moves: {:?}",
+                self.valid_moves_for_piece(chess_move.start_pos)
+            );
+            return Err(ChessError::InvalidMove(*chess_move).into());
         }
 
         let move_undoer = UndoMove::new(self, chess_move);
@@ -402,10 +421,11 @@ impl Game {
                 eprintln!("{}", self);
                 eprintln!("{}", self.get_fen_notation());
                 eprintln!("invalid move: {} {:?}", chess_move, chess_move);
-                panic!("invalid rook move when castling");
+                return Err(ChessError::NoRookAtExpectedColumn.into());
             };
 
-            self.relocate_piece(rook_from_pos, rook_to_pos);
+            self.relocate_piece(rook_from_pos, rook_to_pos)
+                .context("failed to relocate rook when castling")?;
 
             if self.player_turn == Color::White {
                 self.castle_availability[CastleTypes::WhiteKing as usize] = false;
@@ -425,12 +445,12 @@ impl Game {
         self.player_turn = self.player_turn.opposite();
         self.turn_counter += 1;
 
-        self
+        Ok(())
     }
 
-    pub fn unmove_move(&mut self) -> bool {
+    pub fn unmove_move(&mut self) -> Result<()> {
         if self.undo_move_history.is_empty() {
-            panic!("no moves to undo");
+            return Err(ChessError::NoMoveToUndo.into());
         }
 
         let undo_move = self.undo_move_history.pop().unwrap();
@@ -442,14 +462,14 @@ impl Game {
         self.castle_availability = undo_move.castle_availability_before_move;
 
         if undo_move.is_null_move {
-            return true;
+            return Ok(());
         }
 
         if self.board[undo_move.end_pos].is_none() {
             eprintln!("undoing a move that didn't move a piece");
             eprintln!("undo_move: {:?}", undo_move);
             eprintln!("self: {}", self);
-            return false;
+            return Err(ChessError::NoPieceAtPos(undo_move.end_pos).into());
         }
 
         let undo_piece_type = self.board[undo_move.end_pos].unwrap().piece_type;
@@ -485,13 +505,14 @@ impl Game {
                 eprintln!("{}", self);
                 eprintln!("{}", self.get_fen_notation());
                 eprintln!("invalid move: {:?}", undo_move);
-                panic!("invalid rook move when uncastling");
+                return Err(ChessError::NoRookAtExpectedColumn.into());
             };
 
-            self.relocate_piece(rook_move_start, rook_move_end);
+            self.relocate_piece(rook_move_start, rook_move_end)
+                .context("failed to relocate rook when uncastling")?;
         }
 
-        true
+        Ok(())
     }
 
     // Checks if pos is being attacked by color
@@ -596,12 +617,12 @@ mod game_tests {
     }
 
     #[test]
-    fn test_make_move() {
+    fn test_make_move() -> Result<()> {
         let mut game = Game::new_starting_game();
         let m1 = ChessMove::new(Pos::new(6, 0), Pos::new(4, 0), None);
         let m2 = ChessMove::new(Pos::new(1, 0), Pos::new(3, 0), None);
-        game.move_piece(&m1);
-        game.move_piece(&m2);
+        game.move_piece(&m1)?;
+        game.move_piece(&m2)?;
         assert_eq!(game.player_turn, Color::White);
         assert_eq!(game.turn_counter, 2);
         assert_eq!(game.winner, None);
@@ -611,18 +632,20 @@ mod game_tests {
             game.get_fen_notation(),
             "rnbqkbnr/1ppppppp/8/p7/P7/8/1PPPPPPP/RNBQKBNR w"
         );
+
+        Ok(())
     }
 
     #[test]
-    fn test_unmake_move() {
+    fn test_unmake_move() -> Result<()> {
         let mut game = Game::new_starting_game();
         let m1 = ChessMove::new(Pos::new(6, 0), Pos::new(4, 0), None);
         let m2 = ChessMove::new(Pos::new(1, 0), Pos::new(3, 0), None);
 
-        game.move_piece(&m1);
-        game.move_piece(&m2);
-        game.unmove_move();
-        game.unmove_move();
+        game.move_piece(&m1)?;
+        game.move_piece(&m2)?;
+        game.unmove_move()?;
+        game.unmove_move()?;
 
         assert_eq!(game.player_turn, Color::White);
         assert_eq!(game.turn_counter, 0);
@@ -633,20 +656,22 @@ mod game_tests {
             game.get_fen_notation(),
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
         );
+
+        Ok(())
     }
 
     #[test]
-    fn test_unmake_en_passant() -> Result<(), ChessError> {
+    fn test_unmake_en_passant() -> Result<()> {
         let mut game = Game::new_starting_game();
 
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e2e4")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b8c6")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e4e5")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("d7d5")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e5e6")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e2e4")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b8c6")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e4e5")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("d7d5")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("e5e6")?)?;
 
-        game.unmove_move();
-        game.unmove_move();
+        game.unmove_move()?;
+        game.unmove_move()?;
 
         assert_eq!(
             game.get_fen_notation(),
@@ -657,18 +682,18 @@ mod game_tests {
     }
 
     #[test]
-    fn test_pawn_take_unmake() -> Result<(), ChessError> {
+    fn test_pawn_take_unmake() -> Result<()> {
         let mut game = Game::new_starting_game();
 
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a2a4")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b7b5")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b5")?);
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a7a5")?);
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a2a4")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b7b5")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a4b5")?)?;
+        game.move_piece(&ChessMove::from_xboard_algebraic_notation("a7a5")?)?;
 
-        game.unmove_move();
-        game.unmove_move();
-        game.unmove_move();
-        game.unmove_move();
+        game.unmove_move()?;
+        game.unmove_move()?;
+        game.unmove_move()?;
+        game.unmove_move()?;
 
         assert_eq!(
             game.get_fen_notation(),

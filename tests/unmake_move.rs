@@ -1,6 +1,6 @@
 use antichess_engine::chess_game::{ChessMove, Color, Game};
 
-use antichess_engine::error::ChessError;
+use anyhow::{Context, Result};
 
 enum MoveDirection {
     Forward,
@@ -8,7 +8,7 @@ enum MoveDirection {
 }
 
 #[test]
-fn test_unmove_piece_basic() -> Result<(), ChessError> {
+fn test_unmove_piece_basic() -> Result<()> {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> = vec![
@@ -27,12 +27,12 @@ fn test_unmove_piece_basic() -> Result<(), ChessError> {
 
     for m in &moves_strings {
         let curr_move = ChessMove::from_xboard_algebraic_notation(&m)?;
-        game.move_piece(&curr_move);
+        game.move_piece(&curr_move)?;
         undo_count += 1;
     }
 
     for _ in 0..undo_count {
-        game.unmove_move();
+        game.unmove_move().context("Failed to unmove move")?;
     }
 
     assert_eq!(
@@ -44,7 +44,7 @@ fn test_unmove_piece_basic() -> Result<(), ChessError> {
 }
 
 #[test]
-fn test_unmove_piece_remake_repeat() -> Result<(), ChessError> {
+fn test_unmove_piece_remake_repeat() -> Result<()> {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> = vec![
@@ -74,11 +74,11 @@ fn test_unmove_piece_remake_repeat() -> Result<(), ChessError> {
                 let curr_move =
                     ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
                 println!("Making move: {:?}", curr_move);
-                game.move_piece(&curr_move);
+                game.move_piece(&curr_move)?;
                 curr_move_id += 1;
             }
             MoveDirection::Backward => {
-                game.unmove_move();
+                game.unmove_move().context("Failed to unmove move")?;
                 curr_move_id -= 1;
             }
         }
@@ -89,7 +89,7 @@ fn test_unmove_piece_remake_repeat() -> Result<(), ChessError> {
 }
 
 #[test]
-fn test_unmove_piece_remake_repeat_2() -> Result<(), ChessError> {
+fn test_unmove_piece_remake_repeat_2() -> Result<()> {
     let mut game = Game::new_starting_game();
 
     let moves_strings: Vec<String> =
@@ -99,21 +99,21 @@ fn test_unmove_piece_remake_repeat_2() -> Result<(), ChessError> {
 
     // white moves pawn
     let curr_move_1 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
-    game.move_piece(&curr_move_1);
+    game.move_piece(&curr_move_1)?;
     curr_move_id += 1;
 
     // black moves knight
     let curr_move_2 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
-    game.move_piece(&curr_move_2);
+    game.move_piece(&curr_move_2)?;
     curr_move_id += 1;
 
     // white moves pawn
     let curr_move_3 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
 
-    game.move_piece(&curr_move_3);
+    game.move_piece(&curr_move_3)?;
 
     // white undoes pawn move
-    game.unmove_move();
+    game.unmove_move().context("Failed to unmove move")?;
 
     let white_moves = game.all_valid_moves_for_color(Color::White);
 
@@ -129,12 +129,12 @@ fn test_unmove_piece_remake_repeat_2() -> Result<(), ChessError> {
     );
 
     // black undoes knight move
-    game.unmove_move();
+    game.unmove_move().context("Failed to unmove move")?;
 
     // black tries new knight move
     game.move_piece(&ChessMove::from_xboard_algebraic_notation(
         &"b8a6".to_string(),
-    )?);
+    )?)?;
 
     assert!(
         white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
@@ -151,15 +151,15 @@ fn test_unmove_piece_remake_repeat_2() -> Result<(), ChessError> {
 }
 
 #[test]
-fn test_pawn_promotion_while_take_then_undo() -> Result<(), ChessError> {
+fn test_pawn_promotion_while_take_then_undo() -> Result<()> {
     let mut game = Game::from_fen_notation("6n1/7P/8/8/8/8/8/8")?;
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r")?);
+    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r")?)?;
 
     assert_eq!(game.player_turn, Color::Black);
     assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8 b");
 
-    game.unmove_move();
+    game.unmove_move().context("Failed to unmove move")?;
 
     assert_eq!(game.player_turn, Color::White);
     assert_eq!(game.get_fen_notation(), "6n1/7P/8/8/8/8/8/8 w");

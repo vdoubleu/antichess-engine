@@ -5,7 +5,7 @@ mod error;
 use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::{opening::OpeningBook, Engine};
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 
 use clap::Parser;
 use std::io::{self, BufRead};
@@ -17,8 +17,9 @@ struct Args {
     #[clap(value_enum, default_value = "white")]
     color: Color,
 
-    /// Debug level, -1, 0, 1, or 2
-    #[clap(short, long, default_value = "0")]
+    /// Debug level, -1, 0, 1, or 2. -1 is zero debug output, this is for actually playing games. 0
+    /// is for no search progress output, 1 is for basic search progress output, 2 is for verbose
+    #[clap(short, long, default_value = "1")]
     debug: i8,
 }
 
@@ -28,6 +29,17 @@ fn print_move_list(moves: &Vec<ChessMove>) {
         eprint!("{} ", m);
     }
     eprintln!();
+}
+
+fn generate_with_fallback(ab_engine: &mut Engine, game: &Game, color: Color) -> Result<ChessMove> {
+    match ab_engine.generate_move(game, color) {
+        Ok(m) => Ok(m),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            eprintln!("Falling back to random move");
+            ab_engine.generate_rand_move(game, color)
+        }
+    }
 }
 
 fn main() {
@@ -42,31 +54,43 @@ fn main() {
 
     let mut engine = Engine::new();
     engine.opening_book = Some(OpeningBook::new());
+    engine.params.debug_print = args.debug;
 
     if your_color == Color::White {
-        let m = match engine.generate_move(&game, Color::White) {
+        let m = match generate_with_fallback(&mut engine, &game, Color::White) {
             Ok(m) => {
                 println!("{}", m);
                 m
             }
             Err(e) => {
-                eprintln!("encountered error while generating move: {}", e);
-                println!("No moves available");
+                if args.debug > -1 {
+                    eprintln!("encountered error while generating move: {}", e);
+                    println!("No moves available");
+                }
                 return;
             }
         };
-        game.move_piece(&m);
+        if game.move_piece(&m).is_err() {
+            if args.debug > -1 {
+                eprintln!("invalid move generated: {}", m);
+            }
+            return;
+        }
 
         if let Some(winner) = game.winner {
-            println!("Game over. Winner: {}", winner);
+            if args.debug > -1 {
+                println!("Game over. Winner: {}", winner);
+            }
             return;
         }
     }
 
     eprintln!("{}", game);
 
-    let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-    print_move_list(&opp_valid_moves);
+    if args.debug > -1 {
+        let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+        print_move_list(&opp_valid_moves);
+    }
 
     for line in stdin.lock().lines() {
         match line {
@@ -76,40 +100,64 @@ fn main() {
                 let opponent_move = ChessMove::from_xboard_algebraic_notation(&line)
                     .context("opponent inputted invalid move in main")
                     .unwrap();
-                game.move_piece(&opponent_move);
-
-                if let Some(winner) = game.winner {
-                    println!("Game over. Winner: {}", winner);
-                    eprintln!("turns: {}", game.turn_counter);
+                if game.move_piece(&opponent_move).is_err() {
+                    if args.debug > -1 {
+                        eprintln!("invalid move supplied: {}", opponent_move);
+                    }
                     return;
                 }
 
-                let m = match engine.generate_move(&game, your_color) {
+                if let Some(winner) = game.winner {
+                    if args.debug > -1 {
+                        println!("Game over. Winner: {}", winner);
+                        eprintln!("turns: {}", game.turn_counter);
+                    }
+                    return;
+                }
+
+                let m = match generate_with_fallback(&mut engine, &game, your_color) {
                     Ok(m) => {
                         println!("{}", m);
                         m
                     }
                     Err(e) => {
-                        eprintln!("encountered error in move gen: {}", e);
-                        println!("resign");
+                        if args.debug > -1 {
+                            eprintln!("encountered error in move gen: {}", e);
+                            println!("resign");
+                        }
                         return;
                     }
                 };
 
-                game.move_piece(&m);
-
-                if let Some(winner) = game.winner {
-                    println!("Game over. Winner: {}", winner);
-                    eprintln!("turns: {}", game.turn_counter);
+                if game.move_piece(&m).is_err() {
+                    if args.debug > -1 {
+                        eprintln!("invalid move generated: {}", m);
+                    }
                     return;
                 }
 
-                eprintln!("{}", game);
+                if let Some(winner) = game.winner {
+                    if args.debug > -1 {
+                        println!("Game over. Winner: {}", winner);
+                        eprintln!("turns: {}", game.turn_counter);
+                    }
+                    return;
+                }
 
-                let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
-                print_move_list(&opp_valid_moves);
+                if args.debug > -1 {
+                    eprintln!("{}", game);
+                }
+
+                if args.debug > -1 {
+                    let opp_valid_moves = game.all_valid_moves_for_color(opp_color);
+                    print_move_list(&opp_valid_moves);
+                }
             }
-            Err(error) => println!("error: {}", error),
+            Err(error) => {
+                if args.debug > -1 {
+                    println!("error: {}", error)
+                }
+            }
         }
     }
 }

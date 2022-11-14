@@ -113,7 +113,15 @@ fn evaluate_threats_and_support(
     let mut black_score = 0.0;
     let mut white_score = 0.0;
 
-    for end_pos in game.valid_moves_for_piece(pos) {
+    let valid_moves_for_piece_res = game.valid_moves_for_piece(pos);
+
+    if valid_moves_for_piece_res.is_err() {
+        return 0.0;
+    }
+
+    let valid_moves_for_piece = valid_moves_for_piece_res.unwrap();
+
+    for end_pos in valid_moves_for_piece {
         // if we are attacking a square
         if let Some(target_piece) = game.get_piece(end_pos) {
             // and the target square has an opposing piece (aka we are attacking an opposing piece)

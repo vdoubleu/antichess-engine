@@ -1,5 +1,8 @@
 use antichess_engine::chess_game::{ChessMove, Game};
 use antichess_engine::engine::Engine;
+
+use anyhow::Result;
+
 use std::collections::HashMap;
 
 use std::time::Duration;
@@ -7,7 +10,7 @@ use std::time::Duration;
 use std::fs;
 
 /// will create an opening book
-fn main() -> std::io::Result<()> {
+fn main() -> Result<()> {
     let mut opening_book: HashMap<String, ChessMove> = HashMap::new();
 
     generate_opening_book(&mut opening_book);
@@ -42,11 +45,13 @@ fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
         let moves = game.all_valid_moves_for_color(game.player_turn);
 
         for m in moves {
-            game.move_piece(&m);
+            let mut new_game = game.clone();
 
-            gen_rec(engine, store, game, depth - 1);
+            if new_game.move_piece(&m).is_err() {
+                continue;
+            }
 
-            game.unmove_move();
+            gen_rec(engine, store, &mut new_game, depth - 1);
         }
     }
 
@@ -67,7 +72,7 @@ fn write_opening_book_to_file(
     opening_book: &HashMap<String, ChessMove>,
     file_name: &str,
     crate_name: &str,
-) -> std::io::Result<()> {
+) -> Result<()> {
     let mut content = String::new();
 
     let header = String::from("use ")

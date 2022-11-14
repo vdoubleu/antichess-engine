@@ -18,10 +18,11 @@ pub fn all_valid_moves_for_queen(game: &Game, pos: Pos, color: Color) -> Vec<Pos
 mod queen_tests {
     use super::*;
     use crate::chess_game::pos::PosExt;
-    use crate::error::ChessError;
+
+    use anyhow::Result;
 
     #[test]
-    fn test_valid_moves() -> Result<(), ChessError> {
+    fn test_valid_moves() -> Result<()> {
         let game = Game::from_fen_notation("8/8/8/8/3Q4/8/8/8")?;
         let queen_pos = Pos::from_alg_notation("d4");
 

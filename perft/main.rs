@@ -1,6 +1,8 @@
 use antichess_engine::chess_game::Game;
 
-fn main() {
+use anyhow::{Context, Result};
+
+fn main() -> Result<()> {
     // perft test by counting up total positions at a depth
     // these are all taken from the chess programming wiki
 
@@ -18,7 +20,7 @@ fn main() {
         vec![48, 2039, 97862, 4085603],
         false,
         vec![2, 91, 3162, 128013],
-    );
+    )?;
 
     // position 3
     // perft_test(
@@ -51,6 +53,8 @@ fn main() {
     //     true,
     //     vec!(),
     // );
+
+    Ok(())
 }
 
 fn perft_test(
@@ -58,7 +62,7 @@ fn perft_test(
     expected_positions: Vec<usize>,
     check_only_total: bool,
     expected_castles: Vec<usize>,
-) {
+) -> Result<()> {
     let mut game = Game::from_fen_notation(fen).unwrap();
 
     println!("{}", game);
@@ -74,7 +78,7 @@ fn perft_test(
         depth,
         &mut nodes_at_depth,
         &mut castle_at_depth,
-    );
+    )?;
 
     for i in 0..depth {
         assert_eq!(
@@ -91,6 +95,8 @@ fn perft_test(
             );
         }
     }
+
+    Ok(())
 }
 
 fn perft(
@@ -99,21 +105,23 @@ fn perft(
     depth: usize,
     nodes_at_depth: &mut Vec<usize>,
     castle_at_depth: &mut Vec<usize>,
-) {
+) -> Result<()> {
     if curr_depth == depth {
-        return;
+        return Ok(());
     }
 
-    let moves = game.all_valid_moves_for_color_perft(game.player_turn);
+    let moves = game.all_valid_moves_for_color_perft(game.player_turn)?;
 
     for m in moves {
         if m.is_castle(game) {
             castle_at_depth[curr_depth] += 1;
         }
 
-        game.move_piece(&m);
+        game.move_piece(&m).context("move failed")?;
         nodes_at_depth[curr_depth] += 1;
-        perft(game, curr_depth + 1, depth, nodes_at_depth, castle_at_depth);
-        game.unmove_move();
+        perft(game, curr_depth + 1, depth, nodes_at_depth, castle_at_depth)?;
+        game.unmove_move().context("unmove failed")?;
     }
+
+    Ok(())
 }

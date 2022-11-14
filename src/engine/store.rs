@@ -1,4 +1,6 @@
 use crate::chess_game::{ChessMove, Game};
+use anyhow::{Context, Result};
+
 use std::time::Instant;
 
 use std::collections::{HashMap, HashSet};
@@ -88,8 +90,10 @@ impl AlphaBetaStore {
         game.get_fen_notation()
     }
 
-    pub fn probe_fill_pv(&mut self, game: &mut Game) {
-        let mut transpo = self.get_transposition(game);
+    pub fn probe_fill_pv(&mut self, game_original: &Game) -> Result<()> {
+        let mut game = game_original.clone();
+
+        let mut transpo = self.get_transposition(&game);
 
         let mut move_ind = 0;
 
@@ -115,16 +119,23 @@ impl AlphaBetaStore {
                 self.pv[move_ind] = transpo_move;
             }
 
-            game.move_piece(&transpo_move);
+            let move_res = game.move_piece(&transpo_move);
+
+            if move_res.is_err() {
+                break;
+            }
 
             move_ind += 1;
 
-            transpo = self.get_transposition(game);
+            transpo = self.get_transposition(&game);
         }
 
         for _ in 0..move_ind {
-            game.unmove_move();
+            game.unmove_move()
+                .context("unable to completely unwind probe when collecting pv")?;
         }
+
+        Ok(())
     }
 }
 

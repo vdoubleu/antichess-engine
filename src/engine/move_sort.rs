@@ -90,10 +90,10 @@ fn score_captures(game: &Game, move_list: &mut [(&ChessMove, f64)]) {
 mod sort_tests {
     use super::*;
 
-    use crate::error::ChessError;
+    use anyhow::Result;
 
     #[test]
-    fn test_sort() -> Result<(), ChessError> {
+    fn test_sort() -> Result<()> {
         let game = Game::from_fen_notation("8/8/3p4/2r3k1/4N3/2n3q1/8/8")?;
 
         let mut move_list = vec![
