@@ -32,17 +32,21 @@ pub struct AlphaBetaParams {
     pub max_time: Duration,
     /// handle the errors instead of panicing
     pub handle_errors: bool,
+
+    /// total time allowed to be spent searching
+    pub total_time: Duration,
 }
 
 impl Default for AlphaBetaParams {
     fn default() -> Self {
         AlphaBetaParams {
-            depth: 7,
-            max_depth: 20,
+            depth: 8,
+            max_depth: 28,
             null_move_reduction: 2,
             debug_print: 1,
             max_time: Duration::from_secs(20),
             handle_errors: true,
+            total_time: Duration::from_secs(180),
         }
     }
 }

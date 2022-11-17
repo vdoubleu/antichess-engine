@@ -28,6 +28,7 @@ impl Game {
             winner: None,
             undo_move_history: Vec::new(),
             king_pos: [Pos::new(0, 4), Pos::new(7, 4)],
+            turns_since_take_or_pawn_move: 0,
         }
     }
 
@@ -350,9 +351,15 @@ impl Game {
         let (from_row, from_col) = chess_move.start_pos.to_row_col_as_i8();
         let (to_row, to_col) = chess_move.end_pos.to_row_col_as_i8();
 
+        let mut is_take_or_pawn_move = false;
+
+        if moving_piece_type == PieceType::Pawn {
+            is_take_or_pawn_move = true;
+        }
+
         // check if king pos needs to be updated
-        if let Some(piece) = self.board[chess_move.start_pos] {
-            if piece.piece_type == PieceType::King {
+        if moving_piece_type == PieceType::King {
+            if let Some(piece) = self.board[chess_move.start_pos] {
                 self.king_pos[piece.color as usize] = chess_move.end_pos;
             }
         }
@@ -366,6 +373,11 @@ impl Game {
         // check for en passant
         if chess_move.is_en_passant(self) {
             self.board[self.en_passant_pos.unwrap()] = None;
+        }
+
+        // check piece taken
+        if self.board[chess_move.end_pos].is_some() {
+            is_take_or_pawn_move = true;
         }
 
         // move piece
@@ -445,6 +457,12 @@ impl Game {
         self.player_turn = self.player_turn.opposite();
         self.turn_counter += 1;
 
+        if is_take_or_pawn_move {
+            self.turns_since_take_or_pawn_move = 0;
+        } else {
+            self.turns_since_take_or_pawn_move += 1;
+        }
+
         Ok(())
     }
 
@@ -460,6 +478,7 @@ impl Game {
         self.turn_counter -= 1;
         self.en_passant_pos = undo_move.en_passant_pos;
         self.castle_availability = undo_move.castle_availability_before_move;
+        self.turns_since_take_or_pawn_move = undo_move.turns_since_take_or_pawn_move;
 
         if undo_move.is_null_move {
             return Ok(());

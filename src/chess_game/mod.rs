@@ -21,6 +21,8 @@ pub struct Game {
     pub undo_move_history: Vec<UndoMove>,
 
     pub king_pos: [Pos; 2],
+
+    pub turns_since_take_or_pawn_move: i64,
 }
 
 pub enum CastleTypes {
@@ -74,6 +76,8 @@ pub struct UndoMove {
     pub castle_availability_before_move: [bool; 4],
 
     pub is_null_move: bool,
+
+    pub turns_since_take_or_pawn_move: i64,
 }
 
 pub fn promotable_pieces() -> Vec<PieceType> {

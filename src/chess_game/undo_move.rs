@@ -12,6 +12,7 @@ impl UndoMove {
                 promotion: None,
                 castle_availability_before_move: game.castle_availability,
                 is_null_move: true,
+                turns_since_take_or_pawn_move: game.turns_since_take_or_pawn_move,
             };
         }
 
@@ -38,6 +39,7 @@ impl UndoMove {
             castle_availability_before_move: game.castle_availability,
 
             is_null_move: false,
+            turns_since_take_or_pawn_move: game.turns_since_take_or_pawn_move,
         }
     }
 }
