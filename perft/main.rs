@@ -1,5 +1,6 @@
-use antichess_engine::chess_game::Game;
+// use antichess_engine::chess_game::Game;
 
+use pleco::{Board,Player};
 use anyhow::{Context, Result};
 
 use std::time::{Duration, Instant};
@@ -11,9 +12,9 @@ fn main() -> Result<()> {
     // initial position
     let duration = perft_test(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
-        vec![20, 400, 8902, 197281], //, 4865609),
+        vec![20, 400, 8902, 197281, 4865609],
         false,
-        vec![0, 0, 0, 0], //, 0)
+        vec![0, 0, 0, 0, 0],
     );
 
     // position 2
@@ -67,7 +68,8 @@ fn perft_test(
     check_only_total: bool,
     expected_castles: Vec<usize>,
 ) -> Result<Duration> {
-    let mut game = Game::from_fen_notation(fen).unwrap();
+    // let mut game = Game::from_fen_notation(fen).unwrap();
+    let mut game = Board::start_pos();
 
     println!("{}", game);
 
@@ -108,7 +110,7 @@ fn perft_test(
 }
 
 fn perft(
-    game: &mut Game,
+    game: &mut Board,
     curr_depth: usize,
     depth: usize,
     nodes_at_depth: &mut Vec<usize>,
@@ -118,17 +120,20 @@ fn perft(
         return Ok(());
     }
 
-    let moves = game.all_valid_moves_for_color_perft(game.player_turn)?;
+    // let moves = game.all_valid_moves_for_color_perft(game.player_turn)?;
+    let moves = game.generate_moves();
 
     for m in moves {
-        if m.is_castle(game) {
+        if m.is_castle() {
             castle_at_depth[curr_depth] += 1;
         }
 
-        game.move_piece(&m).context("move failed")?;
+        game.apply_move(m);
+        // game.move_piece(&m).context("move failed")?;
         nodes_at_depth[curr_depth] += 1;
         perft(game, curr_depth + 1, depth, nodes_at_depth, castle_at_depth)?;
-        game.unmove_move().context("unmove failed")?;
+        game.undo_move();
+        // game.unmove_move().context("unmove failed")?;
     }
 
     Ok(())
