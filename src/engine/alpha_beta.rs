@@ -196,10 +196,23 @@ fn alpha_beta_impl(
     // move ordering
     all_valid_moves = sort_moves(game, &engine.store, &all_valid_moves);
 
-    let new_curr_depth = if valid_moves_len <= 3 {
-        curr_depth
-    } else {
-        curr_depth - 1
+    let new_curr_depth = {
+        let mut new_curr_depth = curr_depth - 1;
+
+        let in_check = match game.player_turn {
+            Color::White => game.square_attacked_by_color(game.king_pos[0], Color::Black),
+            Color::Black => game.square_attacked_by_color(game.king_pos[1], Color::White),
+        };
+
+        if in_check {
+            new_curr_depth += 1;
+        }
+
+        if valid_moves_len <= 3 {
+            new_curr_depth += 1;
+        }
+
+        new_curr_depth
     };
 
     let mut score = f64::NEG_INFINITY;
