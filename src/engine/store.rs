@@ -1,5 +1,6 @@
-use crate::chess_game::{ChessMove, Game};
-use anyhow::{Context, Result};
+use anyhow::Result;
+
+use pleco::{BitMove, Board};
 
 use std::time::Instant;
 
@@ -7,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 pub struct TranspositionTableEntry {
     pub depth: i32,
-    pub chess_move: Option<ChessMove>,
+    pub chess_move: Option<BitMove>,
     pub fen: String,
     pub score: f64,
     pub flag: TranspositionTableFlag,
@@ -29,9 +30,9 @@ pub struct AlphaBetaStore {
     pub curr_depth: i32,
 
     /// stores the transposition table
-    pub transposition_table: HashMap<String, TranspositionTableEntry>,
+    pub transposition_table: HashMap<u64, TranspositionTableEntry>,
 
-    pub pv: Vec<ChessMove>,
+    pub pv: Vec<BitMove>,
 
     pub total_search_time_ms: u128,
 }
@@ -48,33 +49,43 @@ impl AlphaBetaStore {
     }
     pub fn store_transposition(
         &mut self,
-        game: &Game,
+        board: &Board,
         depth: i32,
         score: f64,
-        chess_move: Option<ChessMove>,
+        chess_move: Option<BitMove>,
         node_type: TranspositionTableFlag,
     ) {
-        if let Some(existing_entry) = self.get_transposition(game) {
+        if let Some(existing_entry) = self.get_transposition(board) {
             if existing_entry.depth >= depth {
                 return;
             }
         }
 
-        let fen = game.get_fen_notation();
+        let zobrist = board.zobrist();
         let entry = TranspositionTableEntry {
             depth,
             chess_move,
-            fen: fen.clone(),
+            fen: board.fen(),
             score,
             flag: node_type,
         };
 
-        self.transposition_table.insert(fen, entry);
+        self.transposition_table.insert(zobrist, entry);
     }
 
-    pub fn get_transposition(&self, game: &Game) -> Option<&TranspositionTableEntry> {
-        let hash = self.hash(game);
-        self.transposition_table.get(&hash)
+    pub fn get_transposition(&self, board: &Board) -> Option<&TranspositionTableEntry> {
+        let hash = self.hash(board);
+        let res = self.transposition_table.get(&hash);
+
+        if let Some(entry) = res {
+            if entry.fen == board.fen() {
+                Some(entry)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     pub fn start_turn(&mut self) {
@@ -86,14 +97,12 @@ impl AlphaBetaStore {
         self.start_time = None;
     }
 
-    fn hash(&self, game: &Game) -> String {
-        game.get_fen_notation()
+    fn hash(&self, board: &Board) -> u64 {
+        board.zobrist()
     }
 
-    pub fn probe_fill_pv(&mut self, game_original: &Game) -> Result<()> {
-        let mut game = game_original.clone();
-
-        let mut transpo = self.get_transposition(&game);
+    pub fn probe_fill_pv(&mut self, board: &mut Board) -> Result<()> {
+        let mut transpo = self.get_transposition(board);
 
         let mut move_ind = 0;
 
@@ -110,6 +119,10 @@ impl AlphaBetaStore {
                 break;
             }
 
+            if board.checkmate() || board.stalemate() {
+                break;
+            }
+
             seen.insert(transpo_entry.fen.clone());
 
             let transpo_move = transpo_entry.chess_move.unwrap();
@@ -118,21 +131,15 @@ impl AlphaBetaStore {
             } else {
                 self.pv[move_ind] = transpo_move;
             }
-
-            let move_res = game.move_piece(&transpo_move);
-
-            if move_res.is_err() {
-                break;
-            }
+            board.apply_move(transpo_move);
 
             move_ind += 1;
 
-            transpo = self.get_transposition(&game);
+            transpo = self.get_transposition(board);
         }
 
         for _ in 0..move_ind {
-            game.unmove_move()
-                .context("unable to completely unwind probe when collecting pv")?;
+            board.undo_move();
         }
 
         Ok(())

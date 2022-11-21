@@ -6,7 +6,6 @@ mod position_scores;
 mod random;
 pub mod store;
 
-use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::alpha_beta::alpha_beta;
 use crate::engine::opening::OpeningBook;
 use crate::engine::random::random_move;
@@ -14,6 +13,7 @@ use crate::engine::store::AlphaBetaStore;
 use crate::error::ChessError;
 
 use anyhow::Result;
+use pleco::{BitMove, Board};
 
 use std::time::Duration;
 
@@ -40,11 +40,11 @@ pub struct AlphaBetaParams {
 impl Default for AlphaBetaParams {
     fn default() -> Self {
         AlphaBetaParams {
-            depth: 8,
+            depth: 7,
             max_depth: 28,
             null_move_reduction: 2,
             debug_print: 1,
-            max_time: Duration::from_secs(20),
+            max_time: Duration::from_secs(25),
             handle_errors: true,
             total_time: Duration::from_secs(180),
         }
@@ -66,11 +66,11 @@ impl Engine {
         }
     }
 
-    pub fn generate_move(&mut self, game: &Game, color: Color) -> Result<ChessMove> {
+    pub fn generate_move(&mut self, board: &Board) -> Result<BitMove> {
         // use opening book if available
-        if game.turn_counter < 5 && self.opening_book.is_some() {
+        if board.ply() < 5 && self.opening_book.is_some() {
             let book: &OpeningBook = self.opening_book.as_ref().unwrap();
-            if let Some(m) = book.get_move(&game.get_fen_notation()) {
+            if let Some(m) = book.get_move(&board.fen()) {
                 return Ok(m);
             }
         }
@@ -105,7 +105,7 @@ impl Engine {
             }
 
             self.store.curr_depth = curr_depth;
-            if let Ok(res) = alpha_beta(game, color, self) {
+            if let Ok(res) = alpha_beta(board, self) {
                 best_move = Some(res.0);
                 best_score = res.1;
             } else if !self.params.handle_errors {
@@ -136,8 +136,27 @@ impl Engine {
         }
     }
 
-    pub fn generate_rand_move(&self, game: &Game, color: Color) -> Result<ChessMove> {
-        random_move(game, color)
+    pub fn generate_rand_move(&self, board: &Board) -> Result<BitMove> {
+        random_move(board)
+    }
+
+    pub fn generate_valid_moves(&self, board: &Board) -> Vec<BitMove> {
+        let moves = board.generate_moves();
+
+        // get two lists of moves, one for captures and one for non-captures
+        let mut captures = Vec::new();
+
+        for m in moves.iter() {
+            if board.is_capture(*m) {
+                captures.push(*m);
+            }
+        }
+
+        if captures.is_empty() {
+            moves.into_iter().collect()
+        } else {
+            captures
+        }
     }
 }
 
@@ -154,13 +173,13 @@ mod gen_move_tests {
 
     #[test]
     fn test_gen_move_opening_book() {
-        let game = Game::new_starting_game();
+        let game = Board::start_pos();
         let mut engine = Engine::new();
         engine.params.depth = 10;
         engine.opening_book = Some(OpeningBook::new());
 
         let curr_time = Instant::now();
-        let m = engine.generate_move(&game, game.player_turn);
+        let m = engine.generate_move(&game);
 
         let finish_time = curr_time.elapsed();
 
@@ -168,11 +187,7 @@ mod gen_move_tests {
 
         assert_eq!(
             m.unwrap(),
-            engine
-                .opening_book
-                .unwrap()
-                .get_move(&game.get_fen_notation())
-                .unwrap()
+            engine.opening_book.unwrap().get_move(&game.fen()).unwrap()
         );
 
         // should use a move from the opening book, so it should be fast

@@ -1,7 +1,9 @@
-use antichess_engine::chess_game::{ChessMove, Game};
+// use antichess_engine::chess_game::{ChessMove, Game};
 use antichess_engine::engine::Engine;
 
 use anyhow::Result;
+
+use pleco::{BitMove, Board};
 
 use std::collections::HashMap;
 
@@ -11,55 +13,50 @@ use std::fs;
 
 /// will create an opening book
 fn main() -> Result<()> {
-    let mut opening_book: HashMap<String, ChessMove> = HashMap::new();
+    let mut opening_book: HashMap<String, BitMove> = HashMap::new();
 
     generate_opening_book(&mut opening_book);
 
-    // for the crate name, I suggest keeping "crate" here if you are not sure, but
-    // depending on where this opening code is getting called from, you may want to
-    // instead replace it with "antichess_engine"
-    write_opening_book_to_file(&opening_book, "opening.rs", "crate")?;
+    write_opening_book_to_file(&opening_book, "opening.rs")?;
 
     Ok(())
 }
 
-fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
+fn generate_opening_book(store_main: &mut HashMap<String, BitMove>) {
     fn gen_rec(
         engine: &mut Engine,
-        store: &mut HashMap<String, ChessMove>,
-        game: &mut Game,
+        store: &mut HashMap<String, BitMove>,
+        board: &mut Board,
         depth: u8,
     ) {
         if depth == 0 {
             return;
         }
 
-        let best_move_option = engine.generate_move(game, game.player_turn);
+        let best_move_option = engine.generate_move(board);
 
         if let Ok(best_move) = best_move_option {
-            store.insert(game.get_fen_notation(), best_move);
+            store.insert(board.fen(), best_move);
         } else {
             return;
         }
 
-        let moves = game.all_valid_moves_for_color(game.player_turn);
+        let moves = board.generate_moves();
 
         for m in moves {
-            let mut new_game = game.clone();
+            board.apply_move(m);
 
-            if new_game.move_piece(&m).is_err() {
-                continue;
-            }
+            gen_rec(engine, store, board, depth - 1);
 
-            gen_rec(engine, store, &mut new_game, depth - 1);
+            board.undo_move();
         }
     }
 
-    let recursion_depth = 3;
-    let reasonable_search_depth = 7;
+    let recursion_depth = 2;
+    let reasonable_search_depth = 8;
     let timeout = 60; // in seconds
 
-    let mut game = Game::new_starting_game();
+    let mut game = Board::start_pos();
     let mut engine = Engine::new();
 
     engine.params.depth = reasonable_search_depth;
@@ -69,30 +66,27 @@ fn generate_opening_book(store_main: &mut HashMap<String, ChessMove>) {
 }
 
 fn write_opening_book_to_file(
-    opening_book: &HashMap<String, ChessMove>,
+    opening_book: &HashMap<String, BitMove>,
     file_name: &str,
-    crate_name: &str,
 ) -> Result<()> {
     let mut content = String::new();
 
-    let header = String::from("use ")
-        + crate_name
-        + "::chess_game::ChessMove; 
+    let header = "use pleco::BitMove;
 use std::collections::HashMap; 
 
 pub struct OpeningBook { 
-    openings: HashMap<String, ChessMove>, 
+    openings: HashMap<String, BitMove>, 
 } 
 impl OpeningBook { 
     pub fn new() -> OpeningBook { 
-        let openings: HashMap<String, ChessMove> = HashMap::from([
+        let openings: HashMap<String, BitMove> = HashMap::from([
 ";
 
     let footer = "
         ]);
         OpeningBook { openings, } 
     } 
-    pub fn get_move(&self, fen: &str) -> Option<ChessMove> { 
+    pub fn get_move(&self, fen: &str) -> Option<BitMove> { 
         self.openings.get(fen).cloned() 
     } 
 }
@@ -102,22 +96,10 @@ impl Default for OpeningBook {
     }
 }";
 
-    content.push_str(header.as_str());
+    content.push_str(header);
 
     for (fen, chess_move) in opening_book {
-        let chess_move_str = if chess_move.promotion.is_none() {
-            format!(
-                "ChessMove::new({}, {}, None)",
-                chess_move.start_pos, chess_move.end_pos
-            )
-        } else {
-            format!(
-                "ChessMove::new({}, {}, Some({:?}))",
-                chess_move.start_pos,
-                chess_move.end_pos,
-                chess_move.promotion.unwrap()
-            )
-        };
+        let chess_move_str = format!("BitMove::new({})", chess_move.get_raw());
 
         let line = format!("(String::from(\"{}\"), {}),\n", fen, chess_move_str);
         content.push_str(line.as_str());

@@ -1,4 +1,3 @@
-use crate::chess_game::{ChessMove, Color, Game};
 use crate::engine::evaluate_game::evaluate;
 use crate::engine::move_sort::sort_moves;
 use crate::engine::store::TranspositionTableFlag;
@@ -6,22 +5,23 @@ use crate::engine::Engine;
 
 use crate::error::ChessError;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
+use pleco::{BitMove, Board, Player};
 
 /// Implements the min max algorithm (without alpha beta pruning for now) to decide the best move
 /// to play. White is maximizing, black is minimizing.
-pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(ChessMove, f64)> {
+pub fn alpha_beta(board: &Board, engine: &mut Engine) -> Result<(BitMove, f64)> {
     let reasonable_depth = engine.store.curr_depth;
     let max_depth = engine.params.max_depth;
 
-    let mut best_move: Option<ChessMove> = None;
+    let mut best_move: Option<BitMove> = None;
 
     let mut alpha = f64::NEG_INFINITY;
     let beta = f64::INFINITY;
 
     let mut best_score = f64::NEG_INFINITY;
 
-    let mut all_valid_moves = game.all_valid_moves_for_color(color);
+    let mut all_valid_moves = engine.generate_valid_moves(board);
     let valid_moves_len = all_valid_moves.len();
 
     if all_valid_moves.is_empty() {
@@ -29,14 +29,17 @@ pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(Che
     }
 
     // move ordering
-    all_valid_moves = sort_moves(game, &engine.store, &all_valid_moves);
+    all_valid_moves = sort_moves(board, &engine.store, &all_valid_moves);
+
+    let mut new_board = board.clone();
 
     let mut ind = 1;
     for chess_move in all_valid_moves {
-        let mut new_game = game.clone();
-
         if engine.params.debug_print > 1 {
-            eprintln!("Trying move {} of {}", ind, valid_moves_len);
+            eprintln!(
+                "Trying move {} of {} - {}",
+                ind, valid_moves_len, chess_move
+            );
         }
 
         if let Some(start_time) = engine.store.start_time {
@@ -53,13 +56,10 @@ pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(Che
             return Err(ChessError::NoStartTime.into());
         }
 
-        let move_res = new_game.move_piece(&chess_move);
-        if move_res.is_err() {
-            continue;
-        }
+        new_board.apply_move(chess_move);
 
         let eval_res = alpha_beta_impl(
-            &mut new_game,
+            &mut new_board,
             -beta,
             -alpha,
             reasonable_depth, //+ (ind % 2),
@@ -68,7 +68,7 @@ pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(Che
             engine,
         );
 
-        new_game.unmove_move().context("unmove error")?;
+        new_board.undo_move();
 
         if eval_res.is_err() {
             if engine.params.handle_errors {
@@ -109,9 +109,9 @@ pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(Che
 
     engine
         .store
-        .store_transposition(game, reasonable_depth, best_score, best_move, node_type);
+        .store_transposition(board, reasonable_depth, best_score, best_move, node_type);
 
-    engine.store.probe_fill_pv(game)?;
+    engine.store.probe_fill_pv(&mut new_board)?;
 
     if let Some(best_move) = best_move {
         Ok((best_move, best_score))
@@ -122,7 +122,7 @@ pub fn alpha_beta(game: &Game, color: Color, engine: &mut Engine) -> Result<(Che
 
 #[allow(clippy::too_many_arguments)]
 fn alpha_beta_impl(
-    game: &mut Game,
+    board: &mut Board,
     alpha: f64,
     beta: f64,
     curr_depth: i32,
@@ -130,21 +130,21 @@ fn alpha_beta_impl(
     do_null: bool,
     engine: &mut Engine,
 ) -> Result<f64> {
-    if curr_depth <= 0 || max_depth <= 0 || game.winner.is_some() {
-        let pov = if game.player_turn == Color::White {
+    if curr_depth <= 0 || max_depth <= 0 || board.checkmate() || board.stalemate() {
+        let pov = if board.turn() == Player::White {
             1.0
         } else {
             -1.0
         };
 
-        return Ok(pov * evaluate(game));
+        return Ok(pov * evaluate(board));
     }
 
     let mut curr_alpha = alpha;
     let mut curr_beta = beta;
 
-    if let Some(transpo) = engine.store.get_transposition(game) {
-        if game.get_fen_notation() == transpo.fen && transpo.depth >= curr_depth {
+    if let Some(transpo) = engine.store.get_transposition(board) {
+        if board.fen() == transpo.fen && transpo.depth >= curr_depth {
             match transpo.flag {
                 TranspositionTableFlag::Exact => {
                     return Ok(transpo.score);
@@ -165,11 +165,18 @@ fn alpha_beta_impl(
 
     // do null move pruning if we are at a reasonable depth
     // and the game is not over
-    if do_null && game.turn_counter > 0 && curr_depth >= 4 && engine.params.null_move_reduction > 0
+    if do_null
+        && board.ply() > 0
+        && curr_depth >= 4
+        && engine.params.null_move_reduction > 0
+        && !board.in_check()
     {
-        game.move_piece(&ChessMove::new_null_move())?;
+        unsafe {
+            board.apply_null_move();
+        }
+
         let eval_res = alpha_beta_impl(
-            game,
+            board,
             -curr_beta,
             -curr_beta + 1.0,
             curr_depth - engine.params.null_move_reduction,
@@ -178,7 +185,10 @@ fn alpha_beta_impl(
             engine,
         );
 
-        game.unmove_move().context("unmove error")?;
+        unsafe {
+            // board.undo_move();
+            board.undo_null_move();
+        }
 
         // if we get an error, we just continue on, we don't do null move pruning
         if let Ok(eval_out) = eval_res {
@@ -190,11 +200,11 @@ fn alpha_beta_impl(
         }
     }
 
-    let mut all_valid_moves = game.all_valid_moves_for_color(game.player_turn);
+    let mut all_valid_moves = engine.generate_valid_moves(board);
     let valid_moves_len = all_valid_moves.len();
 
     // move ordering
-    all_valid_moves = sort_moves(game, &engine.store, &all_valid_moves);
+    all_valid_moves = sort_moves(board, &engine.store, &all_valid_moves);
 
     let new_curr_depth = if valid_moves_len <= 3 {
         curr_depth
@@ -208,10 +218,7 @@ fn alpha_beta_impl(
 
     for move_option in all_valid_moves {
         if engine.params.debug_print > 1 {
-            eprintln!(
-                "move: {} {} {:?}",
-                game.player_turn, move_option, move_option
-            );
+            eprintln!("move: {} {} {:?}", board.turn(), move_option, move_option);
         }
 
         if let Some(start_time) = engine.store.start_time {
@@ -228,10 +235,10 @@ fn alpha_beta_impl(
             return Err(ChessError::NoStartTime.into());
         }
 
-        game.move_piece(&move_option)?;
+        board.apply_move(move_option);
 
         let eval_res = alpha_beta_impl(
-            game,
+            board,
             -curr_beta,
             -curr_alpha,
             new_curr_depth,
@@ -240,7 +247,7 @@ fn alpha_beta_impl(
             engine,
         );
 
-        game.unmove_move().context("unmove error")?;
+        board.undo_move();
 
         if eval_res.is_err() {
             if engine.params.handle_errors {
@@ -275,7 +282,7 @@ fn alpha_beta_impl(
 
     engine
         .store
-        .store_transposition(game, curr_depth, score, best_move, node_type);
+        .store_transposition(board, curr_depth, score, best_move, node_type);
 
     Ok(score)
 }
@@ -283,73 +290,91 @@ fn alpha_beta_impl(
 #[cfg(test)]
 mod alpha_beta_tests {
     use super::*;
-    use crate::chess_game::{Color, Game};
+    // use crate::chess_game::{Color, Game};
+    use pleco::{Board, SQ};
+
+    use anyhow::bail;
 
     use std::time::Duration;
 
     #[test]
     fn test_alpha_beta() -> Result<()> {
-        let mut game = Game::new_starting_game();
+        let mut game = Board::start_pos();
         let mut engine = Engine::new();
         engine.params.depth = 5;
         engine.params.max_time = Duration::from_secs(8);
 
         engine.store.curr_depth = engine.params.depth;
 
-        let move1 = alpha_beta(&game, Color::White, &mut engine);
+        let move1 = alpha_beta(&game, &mut engine);
         assert!(move1.is_ok());
 
-        game.move_piece(&move1.unwrap().0)?;
+        game.apply_move(move1.unwrap().0);
 
         Ok(())
     }
 
     #[test]
     fn white_makes_better_move() -> Result<()> {
-        let game = Game::from_fen_notation("7k/8/8/3q1n2/4P3/8/8/7K")?;
+        let game = match Board::from_fen("7k/8/8/3q1n2/4P3/8/8/7K w - - 0 1") {
+            Ok(g) => g,
+            Err(e) => bail!("can't build fen: {:?}", e),
+        };
+
         let mut engine = Engine::new();
         engine.store.curr_depth = engine.params.depth;
 
-        let move1_option = alpha_beta(&game, Color::White, &mut engine);
+        let move1_option = alpha_beta(&game, &mut engine);
         assert!(move1_option.is_ok());
 
         let move1 = move1_option.unwrap().0;
-        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e4d5")?);
+        assert!(move1.get_dest() == SQ(35));
+        assert!(move1.get_src() == SQ(28));
+        assert!(move1.is_capture());
 
         // try again with a alpha beta depth of 3
         let mut engine2 = Engine::new();
         engine2.params.depth = 3;
 
-        let move2_option = alpha_beta(&game, Color::White, &mut engine2);
+        let move2_option = alpha_beta(&game, &mut engine2);
         assert!(move2_option.is_ok());
 
         let move2 = move2_option.unwrap().0;
-        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e4d5")?);
+        assert!(move2.get_dest() == SQ(35));
+        assert!(move2.get_src() == SQ(28));
+        assert!(move2.is_capture());
 
         Ok(())
     }
 
     #[test]
     fn black_makes_better_move() -> Result<()> {
-        let mut game = Game::from_fen_notation("7k/8/4p3/3Q1N2/8/8/1P6/7K")?;
+        let game = match Board::from_fen("7k/8/8/4p3/3Q1N2/8/8/7K b - - 0 1") {
+            Ok(g) => g,
+            Err(e) => bail!("can't build fen: {:?}", e),
+        };
         let mut engine = Engine::new();
         engine.store.curr_depth = engine.params.depth;
 
-        game.move_piece(&ChessMove::from_xboard_algebraic_notation("b2b4")?)?;
-
-        let move1_option = alpha_beta(&game, Color::Black, &mut engine);
+        let move1_option = alpha_beta(&game, &mut engine);
         assert!(move1_option.is_ok());
 
         let move1 = move1_option.unwrap().0;
-        assert_eq!(move1, ChessMove::from_xboard_algebraic_notation("e6d5")?);
+        assert!(move1.get_src() == SQ(36));
+        assert!(move1.get_dest() == SQ(27));
+        assert!(move1.is_capture());
 
         // try again with a alpha beta depth of 3
         let mut engine2 = Engine::new();
-        let move2_option = alpha_beta(&game, Color::Black, &mut engine2);
+        engine2.params.depth = 3;
+
+        let move2_option = alpha_beta(&game, &mut engine2);
         assert!(move2_option.is_ok());
 
         let move2 = move2_option.unwrap().0;
-        assert_eq!(move2, ChessMove::from_xboard_algebraic_notation("e6d5")?);
+        assert!(move2.get_src() == SQ(36));
+        assert!(move2.get_dest() == SQ(27));
+        assert!(move2.is_capture());
 
         Ok(())
     }

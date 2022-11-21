@@ -1,6 +1,8 @@
-use antichess_engine::chess_game::{ChessMove, Color, Game};
+// use antichess_engine::chess_game::{ChessMove, Color, Game};
 
-use anyhow::{Context, Result};
+use pleco::{board::FenBuildError, Board, Player};
+
+use anyhow::Result;
 
 enum MoveDirection {
     Forward,
@@ -9,7 +11,7 @@ enum MoveDirection {
 
 #[test]
 fn test_unmove_piece_basic() -> Result<()> {
-    let mut game = Game::new_starting_game();
+    let mut game = Board::start_pos();
 
     let moves_strings: Vec<String> = vec![
         "e2e4".to_string(),
@@ -26,18 +28,17 @@ fn test_unmove_piece_basic() -> Result<()> {
     let mut undo_count = 0;
 
     for m in &moves_strings {
-        let curr_move = ChessMove::from_xboard_algebraic_notation(&m)?;
-        game.move_piece(&curr_move)?;
+        game.apply_uci_move(m);
         undo_count += 1;
     }
 
     for _ in 0..undo_count {
-        game.unmove_move().context("Failed to unmove move")?;
+        game.undo_move();
     }
 
     assert_eq!(
-        game.get_fen_notation(),
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
+        game.fen(),
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
 
     Ok(())
@@ -45,7 +46,7 @@ fn test_unmove_piece_basic() -> Result<()> {
 
 #[test]
 fn test_unmove_piece_remake_repeat() -> Result<()> {
-    let mut game = Game::new_starting_game();
+    let mut game = Board::start_pos();
 
     let moves_strings: Vec<String> = vec![
         "e2e4".to_string(),
@@ -71,14 +72,11 @@ fn test_unmove_piece_remake_repeat() -> Result<()> {
     for m in &move_order {
         match m {
             MoveDirection::Forward => {
-                let curr_move =
-                    ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
-                println!("Making move: {:?}", curr_move);
-                game.move_piece(&curr_move)?;
+                game.apply_uci_move(moves_strings[curr_move_id].as_str());
                 curr_move_id += 1;
             }
             MoveDirection::Backward => {
-                game.unmove_move().context("Failed to unmove move")?;
+                game.undo_move();
                 curr_move_id -= 1;
             }
         }
@@ -90,7 +88,7 @@ fn test_unmove_piece_remake_repeat() -> Result<()> {
 
 #[test]
 fn test_unmove_piece_remake_repeat_2() -> Result<()> {
-    let mut game = Game::new_starting_game();
+    let mut game = Board::start_pos();
 
     let moves_strings: Vec<String> =
         vec!["a2a3".to_string(), "b8c6".to_string(), "a3a4".to_string()];
@@ -98,71 +96,61 @@ fn test_unmove_piece_remake_repeat_2() -> Result<()> {
     let mut curr_move_id = 0;
 
     // white moves pawn
-    let curr_move_1 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
-    game.move_piece(&curr_move_1)?;
+    game.apply_uci_move(moves_strings[curr_move_id].as_str());
     curr_move_id += 1;
 
     // black moves knight
-    let curr_move_2 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
-    game.move_piece(&curr_move_2)?;
+    game.apply_uci_move(moves_strings[curr_move_id].as_str());
     curr_move_id += 1;
 
     // white moves pawn
-    let curr_move_3 = ChessMove::from_xboard_algebraic_notation(&moves_strings[curr_move_id])?;
-
-    game.move_piece(&curr_move_3)?;
+    game.apply_uci_move(moves_strings[curr_move_id].as_str());
 
     // white undoes pawn move
-    game.unmove_move().context("Failed to unmove move")?;
+    game.undo_move();
 
-    let white_moves = game.all_valid_moves_for_color(Color::White);
+    let white_moves = game.generate_moves();
 
-    assert!(
-        white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a4".to_string()
-        )?)
-    );
-    assert!(
-        !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a5".to_string()
-        )?)
-    );
+    assert!(white_moves
+        .iter()
+        .find(|x| x.stringify() == "a3a4")
+        .is_some(),);
+    assert!(white_moves
+        .iter()
+        .find(|x| x.stringify() == "a3a5")
+        .is_none(),);
 
     // black undoes knight move
-    game.unmove_move().context("Failed to unmove move")?;
+    game.undo_move();
 
     // black tries new knight move
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation(
-        &"b8a6".to_string(),
-    )?)?;
+    game.apply_uci_move("b8a6");
 
-    assert!(
-        white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a4".to_string()
-        )?)
-    );
-    assert!(
-        !white_moves.contains(&ChessMove::from_xboard_algebraic_notation(
-            &"a3a5".to_string()
-        )?)
-    );
+    assert!(white_moves
+        .iter()
+        .find(|x| x.stringify() == "a3a4")
+        .is_some(),);
+    assert!(white_moves
+        .iter()
+        .find(|x| x.stringify() == "a3a5")
+        .is_none(),);
 
     Ok(())
 }
 
 #[test]
-fn test_pawn_promotion_while_take_then_undo() -> Result<()> {
-    let mut game = Game::from_fen_notation("6n1/7P/8/8/8/8/8/8")?;
+fn test_pawn_promotion_while_take_then_undo() -> Result<(), FenBuildError> {
+    let mut game = Board::from_fen("6n1/k6P/8/8/8/8/8/7K w - - 0 1")?;
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r")?)?;
+    game.apply_uci_move("h7g8r");
 
-    assert_eq!(game.player_turn, Color::Black);
-    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8 b");
+    assert_eq!(game.turn(), Player::Black);
+    assert_eq!(game.fen(), "6R1/k7/8/8/8/8/8/7K b - - 0 1");
 
-    game.unmove_move().context("Failed to unmove move")?;
+    game.undo_move();
 
-    assert_eq!(game.player_turn, Color::White);
-    assert_eq!(game.get_fen_notation(), "6n1/7P/8/8/8/8/8/8 w");
+    assert_eq!(game.turn(), Player::White);
+    assert_eq!(game.fen(), "6n1/k6P/8/8/8/8/8/7K w - - 0 1");
 
     Ok(())
 }

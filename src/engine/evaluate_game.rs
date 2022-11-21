@@ -1,24 +1,16 @@
-use crate::chess_game::{Color, Game, Piece, PieceType, Pos};
-
-use crate::chess_game::pos::PosExt;
+// use crate::chess_game::{Color, Game, Piece, PieceType, Pos};
+// use crate::chess_game::pos::PosExt;
 
 use crate::engine::position_scores::*;
 
-use std::collections::HashMap;
-
-struct EvalStore {
-    black_support: HashMap<(usize, usize), usize>,
-    white_support: HashMap<(usize, usize), usize>,
-    black_threat: HashMap<(usize, usize), usize>,
-    white_threat: HashMap<(usize, usize), usize>,
-}
+use pleco::{core::CastleType, Board, Piece, PieceType, Player, SQ};
 
 /// This will evaluate the game state of the board and return a score
 /// This returns a score from the point of view of the white player. We only
 /// need to return a single value since this is a zero sum game. So, a
 /// positive score is good for white, and a negative score is good for black.
 /// White is maximizing, black is minimizing.
-pub fn evaluate(game: &Game) -> f64 {
+pub fn evaluate(board: &Board) -> f64 {
     // We will evaluate based on several factors (these factors are based on stockfish):
     // 1. Material
     // 2. Imbalance
@@ -34,34 +26,77 @@ pub fn evaluate(game: &Game) -> f64 {
     // 12. Space
     // 13. Winnable
 
-    if let Some(winner) = game.winner {
-        if winner == Color::White {
-            return f64::INFINITY;
-        } else {
+    if board.checkmate() {
+        if board.turn() == Player::White {
             return f64::NEG_INFINITY;
+        } else {
+            return f64::INFINITY;
         }
     }
 
+    if board.stalemate() {
+        return 0.0;
+    }
+
     let mut score = 0.0;
-    let mut eval_store = EvalStore {
-        black_support: HashMap::new(),
-        white_support: HashMap::new(),
-        black_threat: HashMap::new(),
-        white_threat: HashMap::new(),
-    };
 
-    for (piece, pos) in game.get_all_pieces() {
-        let piece_color = piece.color;
+    for (sq, piece) in board.get_piece_locations() {
+        if piece == Piece::None {
+            continue;
+        }
 
-        let piece_score = evaluate_material(&piece.piece_type)
-            + evaluate_piece_pos(&piece, pos, game)
-            + evaluate_threats_and_support(game, &piece, pos, &mut eval_store);
+        let piece_score = evaluate_material(&piece.type_of())
+            + evaluate_piece_pos(&piece, sq, board.ply() as i64)
+            + evaluate_threats_and_support(board, &piece, sq);
 
-        if piece_color == Color::White {
+        if piece.player() == Some(Player::White) {
             score += piece_score;
-        } else {
+        } else if piece.player() == Some(Player::Black) {
             score -= piece_score;
         }
+    }
+
+    score += evaluate_castle(board);
+    score += evaluate_king_protection(board);
+
+    score
+}
+
+fn evaluate_king_protection(board: &Board) -> f64 {
+    fn eval_player_king_prot(board: &Board, player: Player) -> f64 {
+        let squares_near_king = board.piece_bb(player, PieceType::K);
+        let player_squares = board.get_occupied_player(player);
+
+        let occupised_squares_near_king = squares_near_king & player_squares;
+
+        let num_occupised_squares_near_king = occupised_squares_near_king.count_bits();
+
+        num_occupised_squares_near_king as f64 * 10.0
+    }
+
+    let white_king_prot = eval_player_king_prot(board, Player::White);
+    let black_king_prot = eval_player_king_prot(board, Player::Black);
+
+    white_king_prot - black_king_prot
+}
+
+fn evaluate_castle(board: &Board) -> f64 {
+    let mut score = 0.0;
+
+    if board.can_castle(Player::White, CastleType::KingSide) {
+        score += 15.0;
+    }
+
+    if board.can_castle(Player::White, CastleType::QueenSide) {
+        score += 15.0;
+    }
+
+    if board.can_castle(Player::Black, CastleType::KingSide) {
+        score -= 15.0;
+    }
+
+    if board.can_castle(Player::Black, CastleType::QueenSide) {
+        score -= 15.0;
     }
 
     score
@@ -70,116 +105,84 @@ pub fn evaluate(game: &Game) -> f64 {
 /// following regular piece values
 fn evaluate_material(piece: &PieceType) -> f64 {
     match piece {
-        PieceType::Pawn => 100.0,
-        PieceType::Knight => 320.0,
-        PieceType::Bishop => 330.0,
-        PieceType::Rook => 500.0,
-        PieceType::Queen => 900.0,
-        PieceType::King => 0.0,
+        PieceType::P => 100.0,
+        PieceType::N => 320.0,
+        PieceType::B => 330.0,
+        PieceType::R => 500.0,
+        PieceType::Q => 900.0,
+        PieceType::K => 0.0,
+        _ => 0.0,
     }
 }
 
 /// evalutes the positions of the knights
 /// The closer to the middle the knight is, the better
-fn evaluate_piece_pos(piece: &Piece, pos: Pos, game: &Game) -> f64 {
-    match piece.piece_type {
-        PieceType::Pawn => pawn_position_score(pos, piece.color),
-        PieceType::Knight => knight_position_score(pos, piece.color),
-        PieceType::Bishop => bishop_position_score(pos, piece.color),
-        PieceType::Rook => rook_position_score(pos, piece.color, game.turn_counter),
-        PieceType::Queen => queen_position_score(pos, piece.color, game.turn_counter),
-        PieceType::King => king_position_score(pos, piece.color, game.turn_counter),
+fn evaluate_piece_pos(piece: &Piece, sq: SQ, turns: i64) -> f64 {
+    if let Some(p) = piece.player() {
+        match piece.type_of() {
+            PieceType::P => pawn_position_score(sq, p),
+            PieceType::N => knight_position_score(sq, p),
+            PieceType::B => bishop_position_score(sq, p),
+            PieceType::R => rook_position_score(sq, p, turns),
+            PieceType::Q => queen_position_score(sq, p, turns),
+            PieceType::K => king_position_score(sq, p, turns),
+            _ => 0.0,
+        }
+    } else {
+        0.0
     }
 }
 
 /// evaluates threats to either side
-fn evaluate_threats_and_support(
-    game: &Game,
-    piece: &Piece,
-    pos: Pos,
-    eval_store: &mut EvalStore,
-) -> f64 {
+fn evaluate_threats_and_support(game: &Board, piece: &Piece, pos: SQ) -> f64 {
     fn threat_score_calc(piece_type: PieceType) -> f64 {
         match piece_type {
-            PieceType::Pawn => 50.0,
-            PieceType::Knight => 160.0,
-            PieceType::Bishop => 170.0,
-            PieceType::Rook => 250.0,
-            PieceType::Queen => 450.0,
-            PieceType::King => 1000.0,
+            PieceType::P => 50.0,
+            PieceType::N => 160.0,
+            PieceType::B => 170.0,
+            PieceType::R => 250.0,
+            PieceType::Q => 450.0,
+            PieceType::K => 1000.0,
+            _ => 0.0,
         }
     }
 
-    let mut black_score = 0.0;
-    let mut white_score = 0.0;
+    let piece_player = match piece.player() {
+        Some(p) => p,
+        None => return 0.0,
+    };
 
-    let valid_moves_for_piece_res = game.valid_moves_for_piece(pos);
+    let moving_squares = game.attacks_from(piece.type_of(), pos, piece_player);
 
-    if valid_moves_for_piece_res.is_err() {
-        return 0.0;
+    let piece_types_to_check = vec![
+        PieceType::P,
+        PieceType::N,
+        PieceType::B,
+        PieceType::R,
+        PieceType::Q,
+        PieceType::K,
+    ];
+
+    let mut piece_score = 0.0;
+
+    for piece_type in piece_types_to_check {
+        let your_piece_bb = game.piece_bb(piece_player, piece_type);
+        let their_piece_bb = game.piece_bb(piece_player.other_player(), piece_type);
+
+        let piece_support_bb = your_piece_bb & moving_squares;
+        let piece_threat_bb = their_piece_bb & moving_squares;
+
+        let piece_support_count = piece_support_bb.count_bits();
+        let piece_threat_count = piece_threat_bb.count_bits();
+
+        // support is not nearly as useful, since it'll probs def be dead anyways
+        let piece_support_score = piece_support_count as f64 * threat_score_calc(piece_type) / 2.0;
+        let piece_threat_score = piece_threat_count as f64 * threat_score_calc(piece_type);
+
+        piece_score += piece_support_score + piece_threat_score;
     }
 
-    let valid_moves_for_piece = valid_moves_for_piece_res.unwrap();
-
-    for end_pos in valid_moves_for_piece {
-        // if we are attacking a square
-        if let Some(target_piece) = game.get_piece(end_pos) {
-            // and the target square has an opposing piece (aka we are attacking an opposing piece)
-            if piece.color != target_piece.color {
-                // we are threatening this much value
-                let target_threat_score = threat_score_calc(target_piece.piece_type);
-                let my_threat_score = threat_score_calc(piece.piece_type);
-                // the more value a given piece is threatening, the more valuable it is
-                // i.e. if a single pawn threatens a queen and a rook, it is more valuable than if
-                // threatens just a single pawn
-                if piece.color == Color::White {
-                    let threat_count =
-                        *eval_store.white_threat.get(&pos.to_row_col()).unwrap_or(&0);
-                    let new_threat_count = threat_count + 1;
-                    eval_store
-                        .white_threat
-                        .insert(pos.to_row_col(), new_threat_count);
-                    white_score +=
-                        (target_threat_score / my_threat_score) * (new_threat_count as f64 / 2.0);
-                } else {
-                    let threat_count =
-                        *eval_store.black_threat.get(&pos.to_row_col()).unwrap_or(&0);
-                    let new_threat_count = threat_count + 1;
-                    eval_store
-                        .black_threat
-                        .insert(pos.to_row_col(), new_threat_count);
-                    black_score +=
-                        (target_threat_score / my_threat_score) * (new_threat_count as f64 / 2.0);
-                }
-            } else {
-                // you are supporting a piece
-                // each time you support one of your pieces, each additional support is worth less and less
-                if piece.color == Color::White {
-                    let support_count = *eval_store
-                        .white_support
-                        .get(&end_pos.to_row_col())
-                        .unwrap_or(&0);
-                    let new_support_count = support_count + 1;
-                    eval_store
-                        .white_support
-                        .insert(end_pos.to_row_col(), new_support_count);
-                    white_score += 1.0 / new_support_count as f64;
-                } else {
-                    let support_count = *eval_store
-                        .black_support
-                        .get(&end_pos.to_row_col())
-                        .unwrap_or(&0);
-                    let new_support_count = support_count + 1;
-                    eval_store
-                        .black_support
-                        .insert(end_pos.to_row_col(), new_support_count);
-                    black_score += 1.0 / new_support_count as f64;
-                }
-            }
-        }
-    }
-
-    white_score - black_score
+    piece_score
 }
 
 #[cfg(test)]
@@ -188,27 +191,57 @@ mod evaluate_tests {
 
     #[test]
     fn test_starting_eval() {
-        let game = Game::new_starting_game();
+        let game = Board::start_pos();
         let score = evaluate(&game);
         assert!(score.abs() < 1.0);
     }
 
     #[test]
     fn test_start_material_eval_even() {
-        let game = Game::new_starting_game();
+        let game = Board::start_pos();
 
         let mut score = 0.0;
         let mut piece_count = 0;
-        for (piece, _) in game.get_all_pieces() {
-            if piece.color == Color::White {
-                score += evaluate_material(&piece.piece_type);
-            } else {
-                score -= evaluate_material(&piece.piece_type);
+        for pos_ind in 0..64 {
+            let pos = SQ(pos_ind);
+            match game.piece_at_sq(pos) {
+                Piece::None => (),
+                piece => {
+                    if piece.player() == Some(Player::White) {
+                        score += evaluate_material(&piece.type_of());
+                    } else if piece.player() == Some(Player::Black) {
+                        score -= evaluate_material(&piece.type_of());
+                    }
+                    piece_count += 1;
+                }
             }
-            piece_count += 1;
         }
 
         assert!(piece_count == 32);
         assert!(score.abs() < 1.0);
+    }
+
+    #[test]
+    fn test_eval_sup() {
+        let game = Board::start_pos();
+        let pos = SQ(0);
+        let piece = game.piece_at_sq(pos).clone();
+
+        let score = evaluate_threats_and_support(&game, &piece, pos);
+
+        println!("score: {}", score);
+        assert!((score - 105.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_eval_threat() {
+        let game = Board::from_fen("6k1/4QNpp/2p5/7P/8/6n1/3KP3/2B3BR b - - 0 1").unwrap();
+        let pos = SQ(22);
+        let piece = game.piece_at_sq(pos).clone();
+
+        let score = evaluate_threats_and_support(&game, &piece, pos);
+
+        println!("score: {}", score);
+        assert!((score - 350.0).abs() < 0.1);
     }
 }
