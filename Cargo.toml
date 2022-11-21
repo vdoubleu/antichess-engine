@@ -11,6 +11,7 @@ clap = { version = "4.0.15", features = ["derive"] }
 rand = "0.8.4"
 thiserror = "1.0"
 anyhow = "1.0"
+pleco = "0.5.0"
 
 [[bin]]
 name = "antichess-engine"

@@ -1,47 +1,47 @@
-use antichess_engine::chess_game::{ChessMove, Color, Game};
+use pleco::{Board, Player};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 #[test]
 fn test_create_game() {
-    let game = Game::new_starting_game();
+    let game = Board::start_pos();
 
-    assert_eq!(game.player_turn, Color::White);
+    assert_eq!(game.turn(), Player::White);
     assert_eq!(
-        game.get_fen_notation(),
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
+        game.fen(),
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     );
 }
 
 #[test]
 fn test_move_piece() -> Result<()> {
-    let mut game = Game::new_starting_game();
+    let mut game = Board::start_pos();
 
     // white moves
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("e2e4")?)?;
+    game.apply_uci_move("e2e4");
 
-    assert_eq!(game.player_turn, Color::Black);
+    assert_eq!(game.turn(), Player::Black);
     assert_eq!(
-        game.get_fen_notation(),
-        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b"
+        game.fen(),
+        "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
     );
 
     // black moves
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("e7e5")?)?;
+    game.apply_uci_move("e7e5");
 
-    assert_eq!(game.player_turn, Color::White);
+    assert_eq!(game.turn(), Player::White);
     assert_eq!(
-        game.get_fen_notation(),
-        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w"
+        game.fen(),
+        "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
     );
 
     // white moves
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("f1c4")?)?;
+    game.apply_uci_move("f1c4");
 
-    assert_eq!(game.player_turn, Color::Black);
+    assert_eq!(game.turn(), Player::Black);
     assert_eq!(
-        game.get_fen_notation(),
-        "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b"
+        game.fen(),
+        "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2"
     );
 
     Ok(())
@@ -50,41 +50,47 @@ fn test_move_piece() -> Result<()> {
 #[test]
 fn test_castle() -> Result<()> {
     // castle kingside
-    let mut game = Game::from_fen_notation("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R")?;
+    let mut game = match Board::from_fen("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 1 2") {
+        Ok(game) => game,
+        Err(e) => bail!("cannot create game from fen {:?}", e),
+    };
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("e1g1")?)?;
+    game.apply_uci_move("e1g1");
 
-    assert_eq!(game.player_turn, Color::Black);
+    assert_eq!(game.turn(), Player::Black);
     assert_eq!(
-        game.get_fen_notation(),
-        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b"
+        game.fen(),
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 b kq - 2 2"
     );
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("e8g8")?)?;
+    game.apply_uci_move("e8g8");
 
-    assert_eq!(game.player_turn, Color::White);
+    assert_eq!(game.turn(), Player::White);
     assert_eq!(
-        game.get_fen_notation(),
-        "r4rk1/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 w"
+        game.fen(),
+        "r4rk1/pppppppp/8/8/8/8/PPPPPPPP/R4RK1 w - - 3 3"
     );
 
     // castle queenside
-    let mut game = Game::from_fen_notation("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R")?;
+    let mut game = match Board::from_fen("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 1 2") {
+        Ok(game) => game,
+        Err(e) => bail!("cannot create game from fen {:?}", e),
+    };
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("e1c1")?)?;
+    game.apply_uci_move("e1c1");
 
-    assert_eq!(game.player_turn, Color::Black);
+    assert_eq!(game.turn(), Player::Black);
     assert_eq!(
-        game.get_fen_notation(),
-        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b"
+        game.fen(),
+        "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R b kq - 2 2"
     );
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("e8c8")?)?;
+    game.apply_uci_move("e8c8");
 
-    assert_eq!(game.player_turn, Color::White);
+    assert_eq!(game.turn(), Player::White);
     assert_eq!(
-        game.get_fen_notation(),
-        "2kr3r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R w"
+        game.fen(),
+        "2kr3r/pppppppp/8/8/8/8/PPPPPPPP/2KR3R w - - 3 3"
     );
 
     Ok(())
@@ -92,24 +98,30 @@ fn test_castle() -> Result<()> {
 
 #[test]
 fn test_pawn_promotion() -> Result<()> {
-    let mut game = Game::from_fen_notation("8/7P/8/8/8/8/8/8")?;
+    let mut game = match Board::from_fen("k7/7P/8/8/8/8/8/K7 w - - 6 4") {
+        Ok(game) => game,
+        Err(e) => bail!("cannot create game from fen {:?}", e),
+    };
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7h8q")?)?;
+    game.apply_uci_move("h7h8q");
 
-    assert_eq!(game.player_turn, Color::Black);
-    assert_eq!(game.get_fen_notation(), "7Q/8/8/8/8/8/8/8 b");
+    assert_eq!(game.turn(), Player::Black);
+    assert_eq!(game.fen(), "k6Q/8/8/8/8/8/8/K7 b - - 0 4");
 
     Ok(())
 }
 
 #[test]
 fn test_pawn_promotion_while_take() -> Result<()> {
-    let mut game = Game::from_fen_notation("6n1/7P/8/8/8/8/8/8")?;
+    let mut game = match Board::from_fen("k5n1/7P/8/8/8/8/8/K7 w - - 0 4") {
+        Ok(game) => game,
+        Err(e) => bail!("cannot create game from fen {:?}", e),
+    };
 
-    game.move_piece(&ChessMove::from_xboard_algebraic_notation("h7g8r")?)?;
+    game.apply_uci_move("h7g8r");
 
-    assert_eq!(game.player_turn, Color::Black);
-    assert_eq!(game.get_fen_notation(), "6R1/8/8/8/8/8/8/8 b");
+    assert_eq!(game.turn(), Player::Black);
+    assert_eq!(game.fen(), "k5R1/8/8/8/8/8/8/K7 b - - 0 4");
 
     Ok(())
 }

@@ -1,26 +1,27 @@
-use antichess_engine::chess_game::Game;
+use anyhow::Result;
+use pleco::Board;
 
-use anyhow::{Context, Result};
+use std::time::{Duration, Instant};
 
 fn main() -> Result<()> {
     // perft test by counting up total positions at a depth
     // these are all taken from the chess programming wiki
 
     // initial position
-    // perft_test(
-    //     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
-    //     vec!(20, 400, 8902, 197281, 4865609),
-    //     false,
-    //     vec!(0, 0, 0, 0, 0)
-    // );
+    let duration = perft_test(
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        vec![20, 400, 8902, 197281, 4865609],
+        false,
+        vec![0, 0, 0, 0, 0],
+    );
 
     // position 2
-    perft_test(
-        "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R",
-        vec![48, 2039, 97862, 4085603],
-        false,
-        vec![2, 91, 3162, 128013],
-    )?;
+    // let duration = perft_test(
+    //     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R",
+    //     vec![48, 2039, 97862, 4085603],
+    //     false,
+    //     vec![2, 91, 3162, 128013],
+    // )?;
 
     // position 3
     // perft_test(
@@ -54,6 +55,8 @@ fn main() -> Result<()> {
     //     vec!(),
     // );
 
+    println!("Total time: {:?}", duration);
+
     Ok(())
 }
 
@@ -62,8 +65,8 @@ fn perft_test(
     expected_positions: Vec<usize>,
     check_only_total: bool,
     expected_castles: Vec<usize>,
-) -> Result<()> {
-    let mut game = Game::from_fen_notation(fen).unwrap();
+) -> Result<Duration> {
+    let mut game = Board::from_fen(fen).unwrap();
 
     println!("{}", game);
 
@@ -72,6 +75,8 @@ fn perft_test(
     let mut nodes_at_depth = vec![0; depth];
     let mut castle_at_depth = vec![0; depth];
 
+    let start = Instant::now();
+
     perft(
         &mut game,
         0,
@@ -79,6 +84,8 @@ fn perft_test(
         &mut nodes_at_depth,
         &mut castle_at_depth,
     )?;
+
+    let elapsed = start.elapsed();
 
     for i in 0..depth {
         assert_eq!(
@@ -96,11 +103,11 @@ fn perft_test(
         }
     }
 
-    Ok(())
+    Ok(elapsed)
 }
 
 fn perft(
-    game: &mut Game,
+    game: &mut Board,
     curr_depth: usize,
     depth: usize,
     nodes_at_depth: &mut Vec<usize>,
@@ -110,17 +117,17 @@ fn perft(
         return Ok(());
     }
 
-    let moves = game.all_valid_moves_for_color_perft(game.player_turn)?;
+    let moves = game.generate_moves();
 
     for m in moves {
-        if m.is_castle(game) {
+        if m.is_castle() {
             castle_at_depth[curr_depth] += 1;
         }
 
-        game.move_piece(&m).context("move failed")?;
+        game.apply_move(m);
         nodes_at_depth[curr_depth] += 1;
         perft(game, curr_depth + 1, depth, nodes_at_depth, castle_at_depth)?;
-        game.unmove_move().context("unmove failed")?;
+        game.undo_move();
     }
 
     Ok(())
