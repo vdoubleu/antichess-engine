@@ -1,6 +1,3 @@
-// use crate::chess_game::{Color, Game, Piece, PieceType, Pos};
-// use crate::chess_game::pos::PosExt;
-
 use crate::engine::position_scores::*;
 
 use pleco::{core::CastleType, Board, Piece, PieceType, Player, SQ};

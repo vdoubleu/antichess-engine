@@ -95,8 +95,6 @@ fn main() {
         print_move_list(&opp_valid_moves);
     }
 
-    // TODO end the game on checkmate or stalemate
-
     for line in stdin.lock().lines() {
         match line {
             Ok(line) => {

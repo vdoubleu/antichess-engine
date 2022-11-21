@@ -1,6 +1,3 @@
-// use crate::chess_game::pos::PosExt;
-// use crate::chess_game::{Color, Pos};
-
 use pleco::{Player, SQ};
 
 /// more points the closer it is to promotion
