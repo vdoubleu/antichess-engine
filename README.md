@@ -66,14 +66,4 @@ Everything should pass. If something doesn't pass, then go fix it.
 
 
 ## TODO list
-- perft sketchy en passant pos
-
-- king safety evaluation
-
 - dynamic search depth / search time
-
-- 50 move draw, draw by repetition
-
-- force move opponents moves
-  - if an opponent makes an invalid move, try our best to perform it even if it may not make sense
-  - when we approach checkmate, the opponent might make "invalid" moves (realised this when i was playing against the other python bot)
