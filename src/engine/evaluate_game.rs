@@ -44,7 +44,7 @@ pub fn evaluate(board: &Board) -> f64 {
 
         let piece_score = evaluate_material(&piece.type_of())
             + evaluate_piece_pos(&piece, sq, board.ply() as i64)
-            + evaluate_threats_and_support(board, &piece, sq);
+            + evaluate_threats(board, &piece, sq);
 
         if piece.player() == Some(Player::White) {
             score += piece_score;
@@ -131,7 +131,7 @@ fn evaluate_piece_pos(piece: &Piece, sq: SQ, turns: i64) -> f64 {
 }
 
 /// evaluates threats to either side
-fn evaluate_threats_and_support(game: &Board, piece: &Piece, pos: SQ) -> f64 {
+fn evaluate_threats(game: &Board, piece: &Piece, pos: SQ) -> f64 {
     fn threat_score_calc(piece_type: PieceType) -> f64 {
         match piece_type {
             PieceType::P => 50.0,
@@ -163,20 +163,16 @@ fn evaluate_threats_and_support(game: &Board, piece: &Piece, pos: SQ) -> f64 {
     let mut piece_score = 0.0;
 
     for piece_type in piece_types_to_check {
-        let your_piece_bb = game.piece_bb(piece_player, piece_type);
         let their_piece_bb = game.piece_bb(piece_player.other_player(), piece_type);
 
-        let piece_support_bb = your_piece_bb & moving_squares;
         let piece_threat_bb = their_piece_bb & moving_squares;
 
-        let piece_support_count = piece_support_bb.count_bits();
         let piece_threat_count = piece_threat_bb.count_bits();
 
         // support is not nearly as useful, since it'll probs def be dead anyways
-        let piece_support_score = piece_support_count as f64 * threat_score_calc(piece_type) / 2.0;
         let piece_threat_score = piece_threat_count as f64 * threat_score_calc(piece_type);
 
-        piece_score += piece_support_score + piece_threat_score;
+        piece_score += piece_threat_score;
     }
 
     piece_score
@@ -219,24 +215,12 @@ mod evaluate_tests {
     }
 
     #[test]
-    fn test_eval_sup() {
-        let game = Board::start_pos();
-        let pos = SQ(0);
-        let piece = game.piece_at_sq(pos).clone();
-
-        let score = evaluate_threats_and_support(&game, &piece, pos);
-
-        println!("score: {}", score);
-        assert!((score - 105.0).abs() < 0.1);
-    }
-
-    #[test]
     fn test_eval_threat() {
         let game = Board::from_fen("6k1/4QNpp/2p5/7P/8/6n1/3KP3/2B3BR b - - 0 1").unwrap();
         let pos = SQ(22);
         let piece = game.piece_at_sq(pos).clone();
 
-        let score = evaluate_threats_and_support(&game, &piece, pos);
+        let score = evaluate_threats(&game, &piece, pos);
 
         println!("score: {}", score);
         assert!((score - 350.0).abs() < 0.1);

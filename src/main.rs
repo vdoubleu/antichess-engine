@@ -107,7 +107,7 @@ fn main() {
 
                 if board.checkmate() || board.stalemate() {
                     if args.debug > -1 {
-                        eprintln!("Game over, winner: {}", board.turn().other_player());
+                        println!("Game over. winner: {}", board.turn().other_player());
                     }
 
                     return;
@@ -121,7 +121,7 @@ fn main() {
                     Err(e) => {
                         if args.debug > -1 {
                             eprintln!("encountered error in move gen: {}", e);
-                            println!("resign");
+                            eprintln!("resign");
                         }
                         return;
                     }
@@ -131,7 +131,7 @@ fn main() {
 
                 if board.checkmate() || board.stalemate() {
                     if args.debug > -1 {
-                        eprintln!("Game over, winner: {}", board.turn().other_player());
+                        println!("Game over. winner: {}", board.turn().other_player());
                     }
 
                     return;
