@@ -63,7 +63,3 @@ cargo test --release
 ```
 
 Everything should pass. If something doesn't pass, then go fix it.
-
-
-## TODO list
-- dynamic search depth / search time

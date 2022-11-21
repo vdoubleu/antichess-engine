@@ -50,8 +50,10 @@ fn generate_with_fallback(ab_engine: &mut Engine, board: &Board) -> Result<BitMo
     match ab_engine.generate_move(board) {
         Ok(m) => Ok(m),
         Err(e) => {
-            eprintln!("Error: {}", e);
-            eprintln!("Falling back to random move");
+            if ab_engine.params.debug_print > -1 {
+                eprintln!("Error: {}", e);
+                eprintln!("Falling back to random move");
+            }
             ab_engine.generate_rand_move(board)
         }
     }
@@ -88,9 +90,9 @@ fn main() {
         board.apply_move(m);
     }
 
-    eprintln!("{}", board);
-
     if args.debug > -1 {
+        eprintln!("{}", board);
+
         let opp_valid_moves = engine.generate_valid_moves(&board);
         print_move_list(&opp_valid_moves);
     }
@@ -145,9 +147,7 @@ fn main() {
 
                 if args.debug > -1 {
                     eprintln!("{}", board);
-                }
 
-                if args.debug > -1 {
                     let opp_valid_moves = engine.generate_valid_moves(&board);
                     print_move_list(&opp_valid_moves);
                 }
