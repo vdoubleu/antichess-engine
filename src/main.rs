@@ -108,6 +108,9 @@ fn main() {
                 if board.checkmate() || board.stalemate() {
                     if args.debug > -1 {
                         println!("Game over. winner: {}", board.turn().other_player());
+                        eprintln!("{}", board);
+                        eprintln!("ply: {}", board.ply());
+                        eprintln!("total time: {}", engine.store.total_search_time_ms);
                     }
 
                     return;
@@ -132,6 +135,9 @@ fn main() {
                 if board.checkmate() || board.stalemate() {
                     if args.debug > -1 {
                         println!("Game over. winner: {}", board.turn().other_player());
+                        eprintln!("{}", board);
+                        eprintln!("ply: {}", board.ply());
+                        eprintln!("total time: {}", engine.store.total_search_time_ms);
                     }
 
                     return;

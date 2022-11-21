@@ -66,6 +66,22 @@ impl Engine {
         }
     }
 
+    fn dynamic_depth_calculator(&self, depth_estimate: i32) -> i32 {
+        let time_left_dur =
+            self.params.total_time - Duration::from_millis(self.store.total_search_time_ms as u64);
+        let time_left_secs = time_left_dur.as_secs_f64();
+
+        if time_left_secs > 45.0 {
+            depth_estimate
+        } else if time_left_secs > 20.0 {
+            depth_estimate - 1
+        } else if time_left_secs > 10.0 {
+            depth_estimate - 2
+        } else {
+            depth_estimate - 3
+        }
+    }
+
     pub fn generate_move(&mut self, board: &Board) -> Result<BitMove> {
         // use opening book if available
         if board.ply() < 5 && self.opening_book.is_some() {
@@ -75,7 +91,11 @@ impl Engine {
             }
         }
 
-        let target_final_depth = self.params.depth;
+        let target_final_depth = self.dynamic_depth_calculator(self.params.depth);
+
+        if self.params.debug_print > 0 {
+            eprintln!("searching to depth {}", target_final_depth);
+        }
 
         let mut best_move = None;
 
