@@ -8,8 +8,11 @@ use crate::error::ChessError;
 use anyhow::Result;
 use pleco::{BitMove, Board, Player};
 
-/// Implements the min max algorithm (without alpha beta pruning for now) to decide the best move
+/// Implements the alpha beta pruning alg to decide the best move
 /// to play. White is maximizing, black is minimizing.
+///
+/// Technically, this is a negamax algorithm, but it's the same thing.
+/// The only difference is that the implementation is a lil cleaner.
 pub fn alpha_beta(board: &Board, engine: &mut Engine) -> Result<(BitMove, f64)> {
     let reasonable_depth = engine.store.curr_depth;
     let max_depth = engine.params.max_depth;
@@ -28,7 +31,9 @@ pub fn alpha_beta(board: &Board, engine: &mut Engine) -> Result<(BitMove, f64)> 
         return Err(ChessError::NoValidMoves.into());
     }
 
-    // move ordering
+    // move ordering, sort moves based on order we should check them.
+    // we want to check the best moves first because that gives us the
+    // best chance of pruning the search tree.
     all_valid_moves = sort_moves(board, &engine.store, &all_valid_moves);
 
     let mut new_board = board.clone();
@@ -111,6 +116,8 @@ pub fn alpha_beta(board: &Board, engine: &mut Engine) -> Result<(BitMove, f64)> 
         .store
         .store_transposition(board, reasonable_depth, best_score, best_move, node_type);
 
+    // set the pv line for the next iteration. This is the list of best moves we found for this
+    // iteration. This should be a good first move to try the next time we search.
     engine.store.probe_fill_pv(&mut new_board)?;
 
     if let Some(best_move) = best_move {
@@ -186,7 +193,6 @@ fn alpha_beta_impl(
         );
 
         unsafe {
-            // board.undo_move();
             board.undo_null_move();
         }
 

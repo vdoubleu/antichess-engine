@@ -82,6 +82,16 @@ impl Engine {
         }
     }
 
+    /// Generates a move using the alpha beta algorithm
+    /// This uses several optimizations to make it faster.
+    ///
+    /// This includes optimizations such as:
+    /// - Null move pruning
+    /// - Transposition table
+    /// - Move ordering
+    /// - Principal variation search
+    /// - Iterative deepening (inside the main search function inside mod.rs)
+    /// - Time management (will dynamically adjust depth based on time left)
     pub fn generate_move(&mut self, board: &Board) -> Result<BitMove> {
         // use opening book if available
         if board.ply() < 5 && self.opening_book.is_some() {
