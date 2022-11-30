@@ -59,6 +59,18 @@ fn generate_with_fallback(ab_engine: &mut Engine, board: &Board) -> Result<BitMo
     }
 }
 
+fn print_winner(player: Player, is_draw: bool) {
+    if is_draw {
+        println!("1/2-1/2");
+        return;
+    }
+
+    match player {
+        Player::White => println!("1-0"),
+        Player::Black => println!("0-1"),
+    }
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -104,7 +116,7 @@ fn main() {
                 // returns valid moves. If they don't, we'll just error out.
                 if !board.apply_uci_move(&line) {
                     eprintln!("Invalid move: {}", line);
-                    return;
+                    continue;
                 }
 
                 if board.checkmate() || board.stalemate() {
@@ -114,6 +126,8 @@ fn main() {
                         eprintln!("ply: {}", board.ply());
                         eprintln!("total time: {}", engine.store.total_search_time_ms);
                     }
+
+                    print_winner(board.turn().other_player(), board.stalemate());
 
                     return;
                 }
@@ -141,6 +155,8 @@ fn main() {
                         eprintln!("ply: {}", board.ply());
                         eprintln!("total time: {}", engine.store.total_search_time_ms);
                     }
+
+                    print_winner(board.turn().other_player(), board.stalemate());
 
                     return;
                 }
