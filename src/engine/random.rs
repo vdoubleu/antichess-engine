@@ -18,7 +18,6 @@ pub fn random_move(board: &Board) -> Result<BitMove> {
 #[cfg(test)]
 mod random_move_tests {
     use super::*;
-    // use crate::chess_game::Game;
     use anyhow::Result;
 
     #[test]

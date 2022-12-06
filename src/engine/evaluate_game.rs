@@ -8,21 +8,6 @@ use pleco::{core::CastleType, Board, Piece, PieceType, Player, SQ};
 /// positive score is good for white, and a negative score is good for black.
 /// White is maximizing, black is minimizing.
 pub fn evaluate(board: &Board) -> f64 {
-    // We will evaluate based on several factors (these factors are based on stockfish):
-    // 1. Material
-    // 2. Imbalance
-    // 3. Pawns
-    // 4. Knight
-    // 5. Bishop
-    // 6. Rook
-    // 7. Queen
-    // 8. Mobility
-    // 9. King Safety
-    // 10. Threats
-    // 11. Passed Pawns
-    // 12. Space
-    // 13. Winnable
-
     if board.checkmate() {
         if board.turn() == Player::White {
             return f64::NEG_INFINITY;
