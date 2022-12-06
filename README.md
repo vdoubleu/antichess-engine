@@ -28,7 +28,7 @@ or
 ## Running the code (Dev)
 Within this repository, there are number executable to run. As a result, we have outlined the various runnable pieces of code below.  
 
-NOTE: Running this code in the unoptimized debug mode is not suggested. It runs *really* slow if you do it like that, and it only takes marginally less time to compile.
+NOTE: Running this code in the unoptimized debug mode without the `--release` flag is not suggested. It runs *really* slow if you do it like that, and it only takes marginally less time to compile.
 
 ### Playing against the bot (human vs bot)
 
