@@ -5,7 +5,27 @@ A chess engine for anti-chess.
 ## The Rules
 If a person can take a piece, and it is their turn, they must take the piece. If you take the other person's king, you win.
 
-## Running the code
+## Running the code (Prod)
+If you want to run the code for reals, and test it against other bots, or run it for evaluation, you have come to the right place. First, use the following command to compile the executable:
+
+```
+cargo build --release
+```
+
+You can then find the binary at `target/release/antichess-engine`  
+
+To run this executable, you will need to pass in the color you would like the bot to play as. For example:
+```
+./target/release/antichess-engine white
+```
+or 
+```
+./target/release/antichess-engine black
+```
+
+---
+
+## Running the code (Dev)
 Within this repository, there are number executable to run. As a result, we have outlined the various runnable pieces of code below.  
 
 NOTE: Running this code in the unoptimized debug mode is not suggested. It runs *really* slow if you do it like that, and it only takes marginally less time to compile.
@@ -14,15 +34,24 @@ NOTE: Running this code in the unoptimized debug mode is not suggested. It runs 
 
 By default, this is what happens when you simply run the program using the command:
 ```
-cargo run --release
+cargo run --release -- white
 ```
 
-The bot will play as white by default. But if you would like the bot to play as black instead, you can run the following command:
+The bot will play as white by default. But if you would like the bot to play as black, you can run the following command:
 ```
 cargo run --release -- black
 ```
 Of course you can pass in the flag for white (but this doesn't really do anything since it's already white by default).
 
+If you would like to debug the program, you can enable debug logging by passing in an integer for the debug flag. 
+```
+cargo run --release -- --debug=1 white
+```
+
+For more information, you can use the help flag 
+```
+cargo run --release -- --help
+```
 
 ### Running bot matches
 

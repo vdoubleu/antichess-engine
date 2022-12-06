@@ -34,7 +34,7 @@ struct Args {
 
     /// Debug level, -1, 0, 1, or 2. -1 is zero debug output, this is for actually playing games. 0
     /// is for no search progress output, 1 is for basic search progress output, 2 is for verbose
-    #[clap(short, long, default_value = "1")]
+    #[clap(short, long, default_value = "-1")]
     debug: i8,
 }
 
