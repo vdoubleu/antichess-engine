@@ -167,7 +167,7 @@ impl Engine {
     }
 
     pub fn generate_rand_move(&self, board: &Board) -> Result<BitMove> {
-        random_move(board)
+        random_move(board, self)
     }
 
     pub fn generate_valid_moves(&self, board: &Board) -> Vec<BitMove> {
