@@ -13,7 +13,7 @@ parser.add_argument("--black",
                      default="./target/release/antichess-engine.exe")
 
 def is_game_over(line):
-  return search("^((Game over.)|(No moves available)|(error:))", line)
+  return search("^((1-0)|(0-1)|(1\/2-1\/2)|(Game over.)|(No moves available)|(error:))", line)
 
 if __name__ == "__main__":
   args = parser.parse_args()
