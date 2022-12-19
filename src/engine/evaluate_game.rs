@@ -29,7 +29,8 @@ pub fn evaluate(board: &Board) -> f64 {
 
         let piece_score = evaluate_material(&piece.type_of())
             + evaluate_piece_pos(&piece, sq, board.ply() as i64)
-            + evaluate_threats(board, &piece, sq);
+            + evaluate_threats(board, &piece, sq)
+            + evaluate_passed_pawn(board, &piece, sq);
 
         if piece.player() == Some(Player::White) {
             score += piece_score;
@@ -40,6 +41,7 @@ pub fn evaluate(board: &Board) -> f64 {
 
     score += evaluate_castle(board);
     score += evaluate_king_protection(board);
+    score += evaluate_double_bishop(board);
 
     score
 }
@@ -78,6 +80,20 @@ fn evaluate_castle(board: &Board) -> f64 {
     }
 
     if board.can_castle(Player::Black, CastleType::QueenSide) {
+        score -= 15.0;
+    }
+
+    score
+}
+
+fn evaluate_double_bishop(board: &Board) -> f64 {
+    let mut score = 0.0;
+
+    if board.piece_bb(Player::White, PieceType::B).more_than_one() {
+        score += 15.0;
+    }
+
+    if board.piece_bb(Player::Black, PieceType::B).more_than_one() {
         score -= 15.0;
     }
 
@@ -161,6 +177,19 @@ fn evaluate_threats(game: &Board, piece: &Piece, pos: SQ) -> f64 {
     }
 
     piece_score
+}
+
+fn evaluate_passed_pawn(game: &Board, piece: &Piece, sq: SQ) -> f64 {
+    let piece_player = match piece.player() {
+        Some(p) => p,
+        None => return 0.0,
+    };
+
+    if game.pawn_passed(piece_player, sq) {
+        15.0
+    } else {
+        0.0
+    }
 }
 
 #[cfg(test)]
