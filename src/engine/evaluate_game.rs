@@ -16,7 +16,7 @@ pub fn evaluate(board: &Board) -> f64 {
         }
     }
 
-    if board.stalemate() {
+    if board.stalemate() && board.rule_50() >= 50 {
         return 0.0;
     }
 
