@@ -90,11 +90,11 @@ fn evaluate_double_bishop(board: &Board) -> f64 {
     let mut score = 0.0;
 
     if board.piece_bb(Player::White, PieceType::B).more_than_one() {
-        score += 15.0;
+        score += 50.0;
     }
 
     if board.piece_bb(Player::Black, PieceType::B).more_than_one() {
-        score -= 15.0;
+        score -= 50.0;
     }
 
     score
@@ -104,8 +104,8 @@ fn evaluate_double_bishop(board: &Board) -> f64 {
 fn evaluate_material(piece: &PieceType) -> f64 {
     match piece {
         PieceType::P => 100.0,
-        PieceType::N => 320.0,
-        PieceType::B => 330.0,
+        PieceType::N => 300.0,
+        PieceType::B => 300.0,
         PieceType::R => 500.0,
         PieceType::Q => 900.0,
         PieceType::K => 0.0,
@@ -185,8 +185,17 @@ fn evaluate_passed_pawn(game: &Board, piece: &Piece, sq: SQ) -> f64 {
         None => return 0.0,
     };
 
+    // array of scores based on rank of piece
+    let passed_pawn_scores = vec![0.0, 17.0, 20.0, 35.0, 70.0, 175.0, 275.0, 0.0];
+
     if game.pawn_passed(piece_player, sq) {
-        15.0
+        let rank_from_player_pov = if piece_player == Player::White {
+            sq.rank_idx_of_sq()
+        } else {
+            7 - sq.rank_idx_of_sq()
+        };
+
+        passed_pawn_scores[rank_from_player_pov as usize]
     } else {
         0.0
     }
@@ -238,5 +247,21 @@ mod evaluate_tests {
 
         println!("score: {}", score);
         assert!((score - 350.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_passed_pawn() {
+        let game = Board::from_fen("8/8/4P2k/8/3p4/7K/8/8 w - - 0 1").unwrap();
+
+        let white_passed_pawn_score = evaluate_passed_pawn(&game, &Piece::WhitePawn, SQ(44));
+        let black_passed_pawn_score = evaluate_passed_pawn(&game, &Piece::BlackPawn, SQ(27));
+
+        assert!(white_passed_pawn_score > 0.0);
+        assert!(black_passed_pawn_score > 0.0);
+
+        assert!(white_passed_pawn_score > black_passed_pawn_score);
+
+        assert_eq!(white_passed_pawn_score, 175.0);
+        assert_eq!(black_passed_pawn_score, 70.0);
     }
 }
