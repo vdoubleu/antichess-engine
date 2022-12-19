@@ -63,7 +63,7 @@ fn main() {
                 .value_name("DEBUG")
                 .help("Debug level, -1, 0, 1, or 2. -1 is zero debug output, this is for actually playing games. 0 is for no search progress output, 1 is for basic search progress output, 2 is for verbose")
                 .takes_value(true)
-                .default_value("1"),
+                .default_value("-1"),
         )
         .get_matches();
 

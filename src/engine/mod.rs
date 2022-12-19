@@ -67,15 +67,19 @@ impl Engine {
     }
 
     fn dynamic_depth_calculator(&self, depth_estimate: i32) -> i32 {
-        let time_left_dur =
-            self.params.total_time - Duration::from_millis(self.store.total_search_time_ms as u64);
+        let time_left_dur = match self.params.total_time.checked_sub(Duration::from_millis(
+            self.store.total_search_time_ms as u64,
+        )) {
+            Some(t) => t,
+            None => Duration::from_secs(0),
+        };
         let time_left_secs = time_left_dur.as_secs_f64();
 
         if time_left_secs > 45.0 {
             depth_estimate
-        } else if time_left_secs > 20.0 {
+        } else if time_left_secs > 15.0 {
             depth_estimate - 1
-        } else if time_left_secs > 10.0 {
+        } else if time_left_secs > 7.0 {
             depth_estimate - 2
         } else {
             depth_estimate - 3
