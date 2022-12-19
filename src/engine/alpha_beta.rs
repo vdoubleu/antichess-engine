@@ -150,8 +150,8 @@ fn alpha_beta_impl(
     let mut curr_alpha = alpha;
     let mut curr_beta = beta;
 
-    if let Some(transpo) = engine.store.get_transposition(board) {
-        if board.fen() == transpo.fen && transpo.depth >= curr_depth {
+    if let Some((transpo, is_curr_depth)) = engine.store.get_transposition(board) {
+        if is_curr_depth && board.fen() == transpo.fen && transpo.depth >= curr_depth {
             match transpo.flag {
                 TranspositionTableFlag::Exact => {
                     return Ok(transpo.score);

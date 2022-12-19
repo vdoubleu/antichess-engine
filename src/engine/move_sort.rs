@@ -43,11 +43,15 @@ fn score_tt(store: &AlphaBetaStore, board: &Board, scored_moves: &mut [(&BitMove
         return;
     }
 
-    let transpo_entry = transpo.unwrap();
+    let (transpo_entry, is_curr_ply) = transpo.unwrap();
     if let Some(transpo_move) = transpo_entry.chess_move {
         for (m, score) in scored_moves.iter_mut() {
             if &transpo_move == *m {
-                *score += 1000.0;
+                if is_curr_ply {
+                    *score += 1000.0;
+                } else {
+                    *score += 500.0;
+                }
             }
         }
     }

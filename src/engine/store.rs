@@ -12,6 +12,7 @@ pub struct TranspositionTableEntry {
     pub fen: String,
     pub score: f64,
     pub flag: TranspositionTableFlag,
+    pub ply: u16,
 }
 
 pub enum TranspositionTableFlag {
@@ -56,7 +57,7 @@ impl AlphaBetaStore {
         node_type: TranspositionTableFlag,
     ) {
         if let Some(existing_entry) = self.get_transposition(board) {
-            if existing_entry.depth >= depth {
+            if existing_entry.1 && existing_entry.0.depth >= depth {
                 return;
             }
         }
@@ -68,18 +69,20 @@ impl AlphaBetaStore {
             fen: board.fen(),
             score,
             flag: node_type,
+            ply: board.ply(),
         };
 
         self.transposition_table.insert(zobrist, entry);
     }
 
-    pub fn get_transposition(&self, board: &Board) -> Option<&TranspositionTableEntry> {
+    pub fn get_transposition(&self, board: &Board) -> Option<(&TranspositionTableEntry, bool)> {
         let hash = self.hash(board);
         let res = self.transposition_table.get(&hash);
 
         if let Some(entry) = res {
             if entry.fen == board.fen() {
-                Some(entry)
+                let is_current_ply = entry.ply == board.ply();
+                Some((entry, is_current_ply))
             } else {
                 None
             }
@@ -109,7 +112,11 @@ impl AlphaBetaStore {
         let mut seen: HashSet<String> = HashSet::new();
 
         while transpo.is_some() {
-            let transpo_entry = transpo.unwrap();
+            let (transpo_entry, ply_is_current) = transpo.unwrap();
+
+            if !ply_is_current {
+                break;
+            }
 
             if seen.contains(&transpo_entry.fen) {
                 break;
