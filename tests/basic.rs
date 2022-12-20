@@ -103,7 +103,7 @@ fn test_pawn_promotion() -> Result<()> {
         Err(e) => bail!("cannot create game from fen {:?}", e),
     };
 
-    game.apply_uci_move("h7h8q");
+    assert!(game.apply_uci_move("h7h8q"));
 
     assert_eq!(game.turn(), Player::Black);
     assert_eq!(game.fen(), "k6Q/8/8/8/8/8/8/K7 b - - 0 4");
