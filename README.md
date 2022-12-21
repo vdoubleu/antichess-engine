@@ -91,4 +91,16 @@ Simply run the command:
 cargo test --release
 ```
 
-Everything should pass. If something doesn't pass, then go fix it.
+## Citations
+
+All external code are the Rust packages (called "crates") used in the engine listed in the file `Cargo.toml`, which have been cited below.
+
+clap, Version 3.2.23. (2022). [Computer Software]. Retrieved from https://crates.io/crates/clap/3.2.23.
+
+Fleischman, Stephen. (2019). pleco, Version 0.5.0 [Computer software]. Retrieved from https://crates.io/crates/pleco.
+
+rand, Version 0.8.4. (2021). [Computer Software]. Retrieved from https://crates.io/crates/rand/0.8.4.
+
+Tolnay, David. (2022). anyhow, Version 1.0 [Computer software]. Retrieved from https://crates.io/crates/anyhow.
+
+Tolnay, David. (2022). thiserror, Version 1.0 [Computer Software]. Retrieved from https://crates.io/crates/thiserror/.
